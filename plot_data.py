@@ -1,14 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import sys
 
 mpl.rcParams['lines.linewidth'] = 3
 mpl.rcParams['font.family'] = 'DeJavu Serif'
 mpl.rcParams['font.serif'] = ['Times New Roman']
 mpl.rcParams['font.size'] = 20.0
 
-fname = "./kh_test_0010.dat"
-fieldname = "ener"
+fname = sys.argv[1] #"./kh_test_0010.dat"
+fieldname = sys.argv[2] #"dens"
 
 f = open(fname, "r")
 
@@ -60,7 +61,7 @@ dmax = np.max(data)
 plt.figure(figsize=(9, 15))
 plt.title("RT problem at t= %8.3e"%(time))
 plt.pcolormesh(X, Y, np.transpose(data), cmap='viridis', \
-               vmax=dmin, vmin=dmax) # \
+               vmax=dmax, vmin=dmin) # \
                #norm=mpl.colors.LogNorm(dmin,dmax))
 plt.colorbar(label=fieldname)
 plt.show()
