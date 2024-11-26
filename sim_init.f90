@@ -69,7 +69,7 @@ contains
       end do
 
     case ("RT")
-      print *, "Rayleigh-Taylor (KH) problem selected"
+      print *, "Rayleigh-Taylor (RT) problem selected"
       if (.not. usegrav) then
         print *, "Gravity is needed. Setting usegrav = T"
         usegrav = .true.

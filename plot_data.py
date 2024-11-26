@@ -7,7 +7,7 @@ mpl.rcParams['font.family'] = 'DeJavu Serif'
 mpl.rcParams['font.serif'] = ['Times New Roman']
 mpl.rcParams['font.size'] = 20.0
 
-fname = "./rt_test_0551.dat"
+fname = "./kh_test_0010.dat"
 fieldname = "ener"
 
 f = open(fname, "r")

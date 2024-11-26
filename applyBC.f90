@@ -3,43 +3,53 @@ module applyBC_module
 contains
 
   subroutine applyBC(q, Dir, flip)
+
     use misc_module, only: to_upper
     use sim_data, only: xbctype, ybctype, &
-                        xTpts, yTpts
+                        xTpts, yTpts, Gpts
     implicit none
     real(8), dimension(xTpts, yTpts), intent(inout) :: q
     character(len=1), intent(in) :: Dir
     logical, optional, intent(in) :: flip
     real :: sig
-   
+    integer :: ii
+
     select case (to_upper(Dir))
     case ('X')
       if (to_upper(trim(xbctype)) == "PERIODIC") then
-        q(1, :) = q(xTpts-3, :)
-        q(2, :) = q(xTpts-2, :)
-        q(xTpts-1, :) = q(3, :)
-        q(xTpts, :) = q(4, :)
+        do ii  = 1, Gpts
+          ! lower face
+          q(ii, :) = q(xTpts-2*Gpts+ii, :)
+          ! upper face
+          q(xTpts-Gpts+ii, :) = q(Gpts + ii, :)
+        end do
       else if (to_upper(trim(xbctype)) == "REFLECT") then
         sig = 1.000
         if (present(flip)) sig = -1.000
-        q(1, :) = sig * q(4, :)
-        q(2, :) = sig * q(3, :)
-        q(xTpts-1, :) = sig * q(xTpts-2, :)
-        q(xTpts, :) = sig * q(xTpts-3, :)
+        do ii = 1, Gpts
+          ! lower face
+          q(ii, :) = sig * q(2*Gpts+1-ii, :)
+          ! upper face
+          q(xTpts-Gpts+ii, :) = sig * q(xTpts-Gpts+1-ii, :)
+        end do
       end if 
     case ('Y')
       if (to_upper(trim(ybctype)) == "PERIODIC") then
-        q(:, 1) = q(:, yTpts-3)
-        q(:, 2) = q(:, yTpts-2)
-        q(:, yTpts-1) = q(:, 3)
-        q(:, yTpts) = q(:, 4)
+        do ii  = 1, Gpts
+          ! lower face
+          q(:, ii) = q(:, yTpts-2*Gpts+ii)
+          ! upper face
+          q(:, yTpts-Gpts+ii) = q(:, Gpts + ii)
+        end do
       else if (to_upper(trim(ybctype)) == "REFLECT") then
         sig = 1.000
         if (present(flip)) sig = -1.000
-        q(:, 1) = sig * q(:, 4)
-        q(:, 2) = sig * q(:, 3)
-        q(:, yTpts-1) = sig * q(:, yTpts-2)
-        q(:, yTpts) = sig * q(:, yTpts-3)
+        do ii = 1, Gpts
+          ! lower face
+          q(:, ii) = sig * q(:, 2*Gpts+1-ii)
+          ! upper face
+          q(:, yTpts-Gpts+ii) = sig * q(:, yTpts-Gpts+1-ii)
+        end do
       end if 
     case default
         print *, "Wrong!! This code only solves in 2D"

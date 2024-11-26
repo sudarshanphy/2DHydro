@@ -1,5 +1,7 @@
 subroutine grid_init(xIcenter, yIcenter)
+
   use sim_data
+  use misc_module, only: to_upper
   implicit none
   real, intent(inout), dimension(nx) :: xIcenter
   real, intent(inout), dimension(ny) :: yIcenter
@@ -7,8 +9,10 @@ subroutine grid_init(xIcenter, yIcenter)
 
   dx = (xmax - xmin) / nx
   dy = (ymax - ymin) / ny
-
-  Gpts = 2
+  
+  if (to_upper(trim(recon_method)) == "WENO3") Gpts = 2
+  if (to_upper(trim(recon_method)) == "WENO5") Gpts = 3
+  
   xTpts = nx + 2 * Gpts
   yTpts = ny + 2 * Gpts
 

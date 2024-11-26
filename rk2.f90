@@ -3,7 +3,8 @@ module rk2_module
 contains
 
     subroutine RK2_SSP(dens, velx, vely, pres, ener, dt)
-#include "header.h"
+#include "header.h"      
+       
        use hllc_module, only: hllc
        use recon_module, only: recon_getcellfaces
        use eos_module, only: eos_getp
@@ -82,16 +83,6 @@ contains
               
               xrF(i,j) = xF(1); xruF(i,j) = xF(2); xrvF(i,j) = xF(3); xeF(i,j) = xF(5)
               yrF(i,j) = yF(1); yruF(i,j) = yF(2); yrvF(i,j) = yF(3); yeF(i,j) = yF(5)
-#ifdef DEBUG_WENO
-              if ((i == ilo) .and. (j == jlo)) then
-                  print *, "Uleft = ", Uleft
-                  print *, "Uright = ", Uright
-                  print *, "Vleft = ", Vleft
-                  print *, "Vright = ", Vright
-                  print *, "xF = ", xF
-                  print *, "yF = ", yF
-              end if
-#endif
             end do
           end do
 

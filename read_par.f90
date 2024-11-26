@@ -18,8 +18,9 @@ subroutine read_par()
         t0 = 0.0; tf = 0.5; dt = 1.0e-4; out_dt = 1.0e-3
         gamma = 1.4; cfl = 0.4; grav = 0.0
         xbctype = "periodic"; ybctype = "periodic"; problem = "none" 
-        basenm = "def"; restart = .false.; usegrav = .false. 
-
+        basenm = "def"; restart = .false.; usegrav = .false.;
+        recon_method = "weno3"
+ 
         open(no, file='./par_input.par')
 
         ! ios is negative if an end of record condition is encountered or if
@@ -73,6 +74,8 @@ subroutine read_par()
                  read(buffer, *, iostat=ios) problem
               case ('basenm')
                  read(buffer, *, iostat=ios) basenm
+              case ('recon_method')
+                 read(buffer, *, iostat=ios) recon_method
               case ('restart')
                  read(buffer, *, iostat=ios) restart
               case ('restart_no')
