@@ -3,7 +3,7 @@ module io_module
 contains
   
   subroutine write_output(t, step, x, y, &
-                          d, u, v, p, e, outputno)
+                          d, u, v, p, e, outputno, restart_init)
    use sim_data, only: nx, ny, gamma, basenm, dx, dy
    implicit none
   real, intent(in) :: t
@@ -11,6 +11,7 @@ contains
   real, dimension(nx), intent(in) :: x
   real, dimension(ny), intent(in) :: y
   real, dimension(nx, ny), intent(in) :: d, u, v, p, e
+  logical, optional, intent(in) :: restart_init
   integer :: ionum, i, j
   character(len=256) :: fname
   character(len=10) :: int_to_str
@@ -20,7 +21,12 @@ contains
 12   format (1x, 50(es25.18, :, 1x))
   
   write(int_to_str, "(I4.4)") outputno
-  fname = trim(adjustl(basenm))//"_"//trim(adjustl(int_to_str))//".dat"
+  if (present(restart_init)) then
+    fname = trim(adjustl(basenm))//"_reinit_"//trim(adjustl(int_to_str))//".dat"
+  else
+    fname = trim(adjustl(basenm))//"_"//trim(adjustl(int_to_str))//".dat"
+  endif
+
   open(unit=ionum, file=fname, status="replace")
   write(ionum, *) "#time = ", t, ", step = ", step
   write(ionum, *) "#nx = ", nx , ", dx = ", dx

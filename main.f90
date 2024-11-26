@@ -1,6 +1,7 @@
 program hydro
   use sim_data
   use sim_init, only: init_problem
+  use sim_restart, only: restart_problem
   use io_module, only: write_output
   use applyBC_module, only: applyBC_all
   use rk2_module, only: RK2_SSP
@@ -25,6 +26,8 @@ program hydro
   !allocate the fields
   allocate(dens(xTpts, yTpts), velx(xTpts, yTpts), &
            vely(xTpts, yTpts), pres(xTpts, yTpts), ener(xTpts, yTpts))
+
+  ! check if it is a restart or not
   if (.not. restart) then
     step = 0
     outputno = 0
@@ -35,7 +38,17 @@ program hydro
                       vely(ilo:ihi, jlo:jhi), pres(ilo:ihi, jlo:jhi), &
                       ener(ilo:ihi, jlo:jhi), outputno) 
 
+  else
+    call restart_problem(restart_no, t0, dens, velx, vely, pres, ener)
+    step = restart_step
+    outputno = restart_no
+    call write_output(t0, step, xval, yval, &
+                      dens(ilo:ihi, jlo:jhi), velx(ilo:ihi, jlo:jhi), &
+                      vely(ilo:ihi, jlo:jhi), pres(ilo:ihi, jlo:jhi), &
+                      ener(ilo:ihi, jlo:jhi), outputno, .true.) 
+
   end if
+
   call applyBC_all(dens, velx, vely, pres, ener)
    
   time = t0
