@@ -101,6 +101,41 @@ contains
            ener(i,j) = eos_gete((/dens(i,j), velx(i,j), vely(i,j), 0.0, pres(i,j)/)) 
         end do
       end do
+
+    case ("RIEMANN")
+      print *, "2D Riemann problem selected"
+      do j = jlo, jhi
+        do i = ilo, ihi
+           ! shift to interior index
+           iInt = i - Gpts
+           jInt = j - Gpts
+
+           ! initialize the fields
+           if ((x(iInt) <= 0.8) .and. (y(jInt) <= 0.8)) then
+             dens(i,j) = 0.138e0
+             velx(i,j) = 1.206e0
+             vely(i,j) = 1.206e0
+             pres(i,j) = 0.029e0
+           else if ((x(iInt) <= 0.8) .and. (y(jInt) > 0.8)) then
+             dens(i,j) = 0.5323e0
+             velx(i,j) = 1.206e0
+             vely(i,j) = 0.0e0
+             pres(i,j) = 0.3e0
+           else if ((x(iInt) > 0.8) .and. (y(jInt) <= 0.8)) then
+             dens(i,j) = 0.5323e0
+             velx(i,j) = 0.0e0
+             vely(i,j) = 1.206e0
+             pres(i,j) = 0.3e0
+           else
+             dens(i,j) = 1.5e0
+             velx(i,j) = 0.0e0
+             vely(i,j) = 0.0e0
+             pres(i,j) = 1.5e0
+           end if
+           ener(i,j) = eos_gete((/dens(i,j), velx(i,j), vely(i,j), 0.0, pres(i,j)/)) 
+        end do
+      end do
+
     case default
       print *, "such problem not defined"
     end select    

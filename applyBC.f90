@@ -13,7 +13,7 @@ contains
     logical, optional, intent(in) :: flip
     real :: sig
     integer :: ii
-
+    
     select case (to_upper(Dir))
     case ('X')
       if (to_upper(trim(xbctype)) == "PERIODIC") then
@@ -22,6 +22,13 @@ contains
           q(ii, :) = q(xTpts-2*Gpts+ii, :)
           ! upper face
           q(xTpts-Gpts+ii, :) = q(Gpts + ii, :)
+        end do
+      else if (to_upper(trim(xbctype)) == "FLOW") then
+        do ii  = 1, Gpts
+          ! lower face
+          q(ii, :) = q(Gpts+1, :)
+          ! upper face
+          q(xTpts-Gpts+ii, :) = q(xTpts-Gpts, :)
         end do
       else if (to_upper(trim(xbctype)) == "REFLECT") then
         sig = 1.000
@@ -40,6 +47,13 @@ contains
           q(:, ii) = q(:, yTpts-2*Gpts+ii)
           ! upper face
           q(:, yTpts-Gpts+ii) = q(:, Gpts + ii)
+        end do
+      else if (to_upper(trim(ybctype)) == "FLOW") then
+        do ii  = 1, Gpts
+          ! lower face
+          q(:, ii) = q(:, Gpts+1)
+          ! upper face
+          q(:, yTpts-Gpts+ii) = q(:, ytpts-Gpts)
         end do
       else if (to_upper(trim(ybctype)) == "REFLECT") then
         sig = 1.000
