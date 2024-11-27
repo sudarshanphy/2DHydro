@@ -1,14 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import sys
 
 mpl.rcParams['lines.linewidth'] = 3
 mpl.rcParams['font.family'] = 'DeJavu Serif'
 mpl.rcParams['font.serif'] = ['Times New Roman']
 mpl.rcParams['font.size'] = 20.0
 
-fname = "./kh_test_0010.dat"
-fieldname = "ener"
+num = int(sys.argv[1])
+#num = 80
+fname = "./riemann_test_weno5_%04d.dat"%(num)
+fieldname = "dens"
 
 f = open(fname, "r")
 
@@ -55,13 +58,18 @@ data = np.array(data).reshape((nx, ny))
 X, Y = np.meshgrid(x_array, y_array)
 dmin = np.min(data)
 dmax = np.max(data)
+#print(dmin, dmax)
+
+fig = plt.figure(figsize=(12,12)) # , layout='constrained')
+ax = plt.axes()
+plt.title("2D Riemann problem (WENO5) at t= %8.3e"%(time))
+plt.pcolormesh(X, Y, np.transpose(data), cmap='turbo', \
+               #vmax=dmax, vmin=dmin) # \
+               norm=mpl.colors.LogNorm(0.12,1.76))
 
 
-plt.figure(figsize=(9, 15))
-plt.title("RT problem at t= %8.3e"%(time))
-plt.pcolormesh(X, Y, np.transpose(data), cmap='viridis', \
-               vmax=dmax, vmin=dmin) # \
-               #norm=mpl.colors.LogNorm(dmin,dmax))
-plt.colorbar(label=fieldname)
+ax.set_aspect('equal', adjustable='box')
+# this somehow makes the colorbar scale match with the y height
+plt.colorbar(label=fieldname,fraction=0.046, pad=0.04)
 plt.show()
-    
+#plt.savefig("dens_riemann_test_weno3_%04d.png"%(num))   
