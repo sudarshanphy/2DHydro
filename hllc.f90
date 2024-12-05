@@ -4,7 +4,7 @@ contains
 
     subroutine hllc(Uleft, Uright, Dir, Flux)
         use sim_data, only: gamma
-        use eos_module, only: eos_getp
+        use eos_module, only: eos_gete
         use misc_module, only: to_upper 
         implicit none
 
@@ -12,10 +12,10 @@ contains
         character(len=1), intent(in) :: Dir
         real(8), dimension(5), intent(out) :: Flux
         real(8), dimension(5) :: FL, FR, UL, UR, FstarL, FstarR, UstarL, UstarR
-        real(8) :: dL, udL, vdL, wdL, eL
-        real(8) :: dR, udR, vdR, wdR, eR
+        real(8) :: dL, udL, vdL, wdL, pL
+        real(8) :: dR, udR, vdR, wdR, pR
         real(8) :: sdR, sdL, ufL, ufR, vfL, vfR, wfL, wfR
-        real(8) :: pL, pR, HL, HR, cL, cR
+        real(8) :: eL, eR, HL, HR, cL, cR
         real(8) :: ubar, vbar, wbar, Hbar, cbar
         real(8) :: qL, qR, qbar, SL, SR, SM
         real(8) :: dstarL, dstarR, pstar
@@ -24,16 +24,16 @@ contains
         real(8), dimension(3) :: n
 
         dL = Uleft(1)
-        udL = Uleft(2)
-        vdL = Uleft(3)
-        wdL = Uleft(4)
-        eL = Uleft(5)
+        ufL = Uleft(2)
+        vfL = Uleft(3)
+        wfL = Uleft(4)
+        pL = Uleft(5)
 
         dR = Uright(1)
-        udR = Uright(2)
-        vdR = Uright(3)
-        wdR = Uright(4)
-        eR = Uright(5)
+        ufR = Uright(2)
+        vfR = Uright(3)
+        wfR = Uright(4)
+        pR = Uright(5)
 
         select case (to_upper(Dir))
         case ('X')
@@ -50,17 +50,17 @@ contains
         sdR = sqrt(dR)
         sdL = sqrt(dL)
 
-        ufL = udL / dL
-        ufR = udR / dR
+        udL = ufL * dL
+        udR = ufR * dR
 
-        vfL = vdL / dL
-        vfR = vdR / dR
+        vdL = vfL * dL
+        vdR = vfR * dR
 
-        wfL = wdL / dL
-        wfR = wdR / dR
+        wdL = wfL * dL
+        wdR = wfR * dR
 
-        pL =  eos_getp((/dL, ufL, vfL, wfL, eL/))
-        pR =  eos_getp((/dR, ufR, vfR, wfR, eR/))
+        eL =  eos_gete((/dL, ufL, vfL, wfL, pL/))
+        eR =  eos_gete((/dR, ufR, vfR, wfR, pR/))
 
         HL = (eL + pL) / dL
         HR = (eR + pR) / dR
@@ -86,8 +86,16 @@ contains
 
         SM = ((dR * qR * (SR - qR) - dL * qL * (SL - qL)) + pL - pR) / (dR * (SR - qR) - dL * (SL - qL))
 
-        FL = (/dL * qL, dL * ufL * qL + pL * n(1), dL * vfL * qL + pL * n(2), dL * wfL * qL + pL * n(3), qL * (eL + pL)/)
-        FR = (/dR * qR, dR * ufR * qR + pR * n(1), dR * vfR * qR + pR * n(2), dR * wfR * qR + pR * n(3), qR * (eR + pR)/)
+        FL = (/dL * qL, &
+               dL * ufL * qL + pL * n(1), &
+               dL * vfL * qL + pL * n(2), &
+               dL * wfL * qL + pL * n(3), &
+               qL * (eL + pL)/)
+        FR = (/dR * qR, &
+               dR * ufR * qR + pR * n(1), &
+               dR * vfR * qR + pR * n(2), &
+               dR * wfR * qR + pR * n(3), &
+               qR * (eR + pR)/)
 
         dstarL = dL * (SL - qL) / (SL - SM)
         dstarR = dR * (SR - qR) / (SR - SM)
