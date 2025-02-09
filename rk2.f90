@@ -5,7 +5,7 @@ contains
     subroutine RK2_SSP(dens, velx, vely, pres, ener, dt)
 #include "header.h"      
        
-       use hllc_module, only: hllc
+       use riemann_module, only: hllc
        use recon_module, only: recon_getcellfaces
        use eos_module, only: eos_getp
        use sim_data, only: grav, usegrav, ilo, ihi, jlo, jhi, &

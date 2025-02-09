@@ -1,4 +1,4 @@
-module hllc_module
+module riemann_module
     implicit none
 contains
 
@@ -135,5 +135,5 @@ contains
         return
     end subroutine hllc
 
-end module hllc_module
+end module riemann_module
 

@@ -1,5 +1,5 @@
 program test_hllc
-    use hllc_module, only: hllc
+    use riemann_module, only: hllc
 
     implicit none
     real, dimension(5) :: Uleft, Uright, F
