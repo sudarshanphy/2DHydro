@@ -157,48 +157,48 @@ contains
 
   end subroutine get_facevalue_weno5z
 
-  subroutine recon_getcellfaces(dens, momx, momy, ener, dt, &
+  subroutine recon_getcellfaces(dens, velx, vely, pres, dt, &
                                    !method, slimiter, &
-                                   xr_plus, xru_plus, xrv_plus, xe_plus, &
-                                   xr_minus, xru_minus, xrv_minus, xe_minus, &
-                                   yr_plus, yru_plus, yrv_plus, ye_plus, &
-                                   yr_minus, yru_minus, yrv_minus, ye_minus)
+                                   xr_plus, xu_plus, xv_plus, xp_plus, &
+                                   xr_minus, xu_minus, xv_minus, xp_minus, &
+                                   yr_plus, yu_plus, yv_plus, yp_plus, &
+                                   yr_minus, yu_minus, yv_minus, yp_minus)
 
         use sim_data, only: xTpts, yTpts, dx, dy, gamma, ilo, ihi, jlo, jhi, & 
                             recon_method
         use misc_module, only: to_upper
         implicit none
         real, intent(in) :: dt
-        real, dimension(xTpts,yTpts), intent(in) :: dens, momx, momy, ener
+        real, dimension(xTpts,yTpts), intent(in) :: dens, velx, vely, pres
         !character(len=*) :: method
         !character(len=*) :: slimiter
 
-        real, dimension(xTpts, yTpts), intent(out) :: xr_plus, xru_plus, xrv_plus, xe_plus
-        real, dimension(xTpts, yTpts), intent(out) :: xr_minus, xru_minus, xrv_minus, xe_minus
-        real, dimension(xTpts, yTpts), intent(out) :: yr_plus, yru_plus, yrv_plus, ye_plus
-        real, dimension(xTpts, yTpts), intent(out) :: yr_minus, yru_minus, yrv_minus, ye_minus
+        real, dimension(xTpts, yTpts), intent(out) :: xr_plus, xu_plus, xv_plus, xp_plus
+        real, dimension(xTpts, yTpts), intent(out) :: xr_minus, xu_minus, xv_minus, xp_minus
+        real, dimension(xTpts, yTpts), intent(out) :: yr_plus, yu_plus, yv_plus, yp_plus
+        real, dimension(xTpts, yTpts), intent(out) :: yr_minus, yu_minus, yv_minus, yp_minus
 
         integer :: i, j
 
         xr_plus = 0.0
-        xru_plus = 0.0
-        xrv_plus = 0.0
-        xe_plus = 0.0
+        xu_plus = 0.0
+        xv_plus = 0.0
+        xp_plus = 0.0
 
         xr_minus = 0.0
-        xru_minus = 0.0
-        xrv_minus = 0.0
-        xe_minus = 0.0
+        xu_minus = 0.0
+        xv_minus = 0.0
+        xp_minus = 0.0
 
         yr_plus = 0.0
-        yru_plus = 0.0
-        yrv_plus = 0.0
-        ye_plus = 0.0
+        yu_plus = 0.0
+        yv_plus = 0.0
+        yp_plus = 0.0
 
         yr_minus = 0.0
-        yru_minus = 0.0
-        yrv_minus = 0.0
-        ye_minus = 0.0
+        yu_minus = 0.0
+        yv_minus = 0.0
+        yp_minus = 0.0
 
         if (to_upper(trim(recon_method)) == "WENO3") then
             do i = ilo-1, ihi+1
@@ -206,21 +206,21 @@ contains
 
                     call get_facevalue_weno(dens(i - 1, j), dens(i, j), dens(i + 1, j), &
                       xr_plus(i, j), xr_minus(i, j))
-                    call get_facevalue_weno(momx(i - 1, j), momx(i, j), momx(i + 1, j), &
-                      xru_plus(i, j), xru_minus(i, j))
-                    call get_facevalue_weno(momy(i - 1, j), momy(i, j), momy(i + 1, j), &
-                      xrv_plus(i, j), xrv_minus(i, j))
-                    call get_facevalue_weno(ener(i - 1, j), ener(i, j), ener(i + 1, j), &
-                      xe_plus(i, j), xe_minus(i, j))
+                    call get_facevalue_weno(velx(i - 1, j), velx(i, j), velx(i + 1, j), &
+                      xu_plus(i, j), xu_minus(i, j))
+                    call get_facevalue_weno(vely(i - 1, j), vely(i, j), vely(i + 1, j), &
+                      xv_plus(i, j), xv_minus(i, j))
+                    call get_facevalue_weno(pres(i - 1, j), pres(i, j), pres(i + 1, j), &
+                      xp_plus(i, j), xp_minus(i, j))
 
                     call get_facevalue_weno(dens(i, j - 1), dens(i, j), dens(i, j + 1), &
                       yr_plus(i, j), yr_minus(i, j))
-                    call get_facevalue_weno(momx(i, j - 1), momx(i, j), momx(i, j + 1), &
-                      yru_plus(i, j), yru_minus(i, j))
-                    call get_facevalue_weno(momy(i, j - 1), momy(i, j), momy(i, j + 1), &
-                      yrv_plus(i, j), yrv_minus(i, j))
-                    call get_facevalue_weno(ener(i, j - 1), ener(i, j), ener(i, j + 1), &
-                      ye_plus(i, j), ye_minus(i, j))
+                    call get_facevalue_weno(velx(i, j - 1), velx(i, j), velx(i, j + 1), &
+                      yu_plus(i, j), yu_minus(i, j))
+                    call get_facevalue_weno(vely(i, j - 1), vely(i, j), vely(i, j + 1), &
+                      yv_plus(i, j), yv_minus(i, j))
+                    call get_facevalue_weno(pres(i, j - 1), pres(i, j), pres(i, j + 1), &
+                      yp_plus(i, j), yp_minus(i, j))
 
                 end do
             end do
@@ -230,21 +230,21 @@ contains
 
                 call get_facevalue_weno5z(dens(i - 2, j), dens(i - 1, j), dens(i, j), &
                   dens(i + 1, j), dens(i + 2, j), xr_plus(i, j), xr_minus(i, j))
-                call get_facevalue_weno5z(momx(i - 2, j), momx(i - 1, j), momx(i, j), &
-                  momx(i + 1, j), momx(i + 2, j), xru_plus(i, j), xru_minus(i, j))
-                call get_facevalue_weno5z(momy(i - 2, j), momy(i - 1, j), momy(i, j), &
-                  momy(i + 1, j), momy(i + 2, j), xrv_plus(i, j), xrv_minus(i, j))
-                call get_facevalue_weno5z(ener(i - 2, j), ener(i - 1, j), ener(i, j), &
-                  ener(i + 1, j), ener(i + 2, j), xe_plus(i, j), xe_minus(i, j))
+                call get_facevalue_weno5z(velx(i - 2, j), velx(i - 1, j), velx(i, j), &
+                  velx(i + 1, j), velx(i + 2, j), xu_plus(i, j), xu_minus(i, j))
+                call get_facevalue_weno5z(vely(i - 2, j), vely(i - 1, j), vely(i, j), &
+                  vely(i + 1, j), vely(i + 2, j), xv_plus(i, j), xv_minus(i, j))
+                call get_facevalue_weno5z(pres(i - 2, j), pres(i - 1, j), pres(i, j), &
+                  pres(i + 1, j), pres(i + 2, j), xp_plus(i, j), xp_minus(i, j))
                                                                                                                    
                 call get_facevalue_weno5z(dens(i, j - 2), dens(i, j - 1), dens(i, j), &
                   dens(i, j + 1), dens(i, j + 2), yr_plus(i, j), yr_minus(i, j))
-                call get_facevalue_weno5z(momx(i, j - 2), momx(i, j - 1), momx(i, j), &
-                  momx(i, j + 1), momx(i, j + 2), yru_plus(i, j), yru_minus(i, j))
-                call get_facevalue_weno5z(momy(i, j - 2), momy(i, j - 1), momy(i, j), &
-                  momy(i, j + 1), momy(i, j + 2), yrv_plus(i, j), yrv_minus(i, j))
-                call get_facevalue_weno5z(ener(i, j - 2), ener(i, j - 1), ener(i, j), &
-                  ener(i, j + 1), ener(i, j + 2), ye_plus(i, j), ye_minus(i, j))
+                call get_facevalue_weno5z(velx(i, j - 2), velx(i, j - 1), velx(i, j), &
+                  velx(i, j + 1), velx(i, j + 2), yu_plus(i, j), yu_minus(i, j))
+                call get_facevalue_weno5z(vely(i, j - 2), vely(i, j - 1), vely(i, j), &
+                  vely(i, j + 1), vely(i, j + 2), yv_plus(i, j), yv_minus(i, j))
+                call get_facevalue_weno5z(pres(i, j - 2), pres(i, j - 1), pres(i, j), &
+                  pres(i, j + 1), pres(i, j + 2), yp_plus(i, j), yp_minus(i, j))
 
                 end do
             end do

@@ -16,10 +16,10 @@ contains
        real(8), intent(in) :: dt 
        real(8), dimension(xTpts, yTpts) :: momx, momy, dens_n, &
                                            momx_n, momy_n, ener_n
-       real(8), dimension(xTpts, yTpts) :: xr_plus, xru_plus, xrv_plus, xe_plus
-       real(8), dimension(xTpts, yTpts) :: xr_minus, xru_minus, xrv_minus, xe_minus
-       real(8), dimension(xTpts, yTpts) :: yr_plus, yru_plus, yrv_plus, ye_plus
-       real(8), dimension(xTpts, yTpts) :: yr_minus, yru_minus, yrv_minus, ye_minus
+       real(8), dimension(xTpts, yTpts) :: xr_plus, xu_plus, xv_plus, xp_plus
+       real(8), dimension(xTpts, yTpts) :: xr_minus, xu_minus, xv_minus, xp_minus
+       real(8), dimension(xTpts, yTpts) :: yr_plus, yu_plus, yv_plus, yp_plus
+       real(8), dimension(xTpts, yTpts) :: yr_minus, yu_minus, yv_minus, yp_minus
 
        real(8), dimension(xTpts, yTpts) :: xrF, xruF, xrvF, xrwF, xeF
        real(8), dimension(xTpts, yTpts) :: yrF, yruF, yrvF, yrwF, yeF
@@ -56,12 +56,12 @@ contains
        ! rk2 has 2 steps
        do k = 1, 2
 
-         call recon_getcellfaces(dens, momx, momy, ener, dt, &
+         call recon_getcellfaces(dens, velx, vely, pres, dt, &
                                  !method, slimiter, &
-                                 xr_plus, xru_plus, xrv_plus, xe_plus, &
-                                 xr_minus, xru_minus, xrv_minus, xe_minus, &
-                                 yr_plus, yru_plus, yrv_plus, ye_plus, &
-                                 yr_minus, yru_minus, yrv_minus, ye_minus)
+                                 xr_plus, xu_plus, xv_plus, xp_plus, &
+                                 xr_minus, xu_minus, xv_minus, xp_minus, &
+                                 yr_plus, yu_plus, yv_plus, yp_plus, &
+                                 yr_minus, yu_minus, yv_minus, yp_minus)
 
           do j=jlo, jhi + 1
             do i = ilo, ihi + 1
@@ -69,14 +69,14 @@ contains
                xF(:) = 0.0
                yF(:) = 0.0
 
-               Uleft = (/xr_plus(i-1,j), xru_plus(i-1,j), &
-                 xrv_plus(i-1,j), 0.0e0, xe_plus(i-1,j)/)
-               Uright = (/xr_minus(i,j), xru_minus(i,j), &
-                 xrv_minus(i,j), 0.0e0, xe_minus(i,j)/)
-               Vleft = (/yr_plus(i,j-1), yru_plus(i,j-1), &
-                 yrv_plus(i,j-1), 0.0e0, ye_plus(i,j-1)/)
-               Vright = (/yr_minus(i,j), yru_minus(i,j), &
-                 yrv_minus(i,j), 0.0e0, ye_minus(i,j)/)
+               Uleft = (/xr_plus(i-1,j), xu_plus(i-1,j), &
+                 xv_plus(i-1,j), 0.0e0, xp_plus(i-1,j)/)
+               Uright = (/xr_minus(i,j), xu_minus(i,j), &
+                 xv_minus(i,j), 0.0e0, xp_minus(i,j)/)
+               Vleft = (/yr_plus(i,j-1), yu_plus(i,j-1), &
+                 yv_plus(i,j-1), 0.0e0, yp_plus(i,j-1)/)
+               Vright = (/yr_minus(i,j), yu_minus(i,j), &
+                 yv_minus(i,j), 0.0e0, yp_minus(i,j)/)
 
               call hllc(Uleft, Uright, "x", xF)
               call hllc(Vleft, Vright, "y", yF)
@@ -105,7 +105,10 @@ contains
                            + (dt / dx) * (xeF(i,j) - xeF(i+1, j)) &
                            + (dt / dy) * (yeF(i,j) - yeF(i, j+1)) &
                            + dt * sgrav(4)
-                         
+
+               velx(i,j) = momx(i,j)/dens(i,j)
+               vely(i,j) = momy(i,j)/dens(i,j)
+               pres(i,j) = eos_getp((/dens(i,j), velx(i,j), vely(i,j), 0.0, ener(i,j)/))          
                ! floor values for minimum is smallf          
                !dens(i,j) = max(dens(i,j), smallf)
                !momx(i,j) = max(abs(momx(i,j)), smallf)
@@ -115,7 +118,7 @@ contains
             end do
           end do
 
-          call applyBC_all(dens, momx, momy, pres, ener)
+          call applyBC_all(dens, velx, vely, pres, ener)
 
        end do
 
@@ -125,20 +128,14 @@ contains
            momx(i,j) = 0.5e0 * (momx_n(i,j) + momx(i,j))
            momy(i,j) = 0.5e0 * (momy_n(i,j) + momy(i,j))
            ener(i,j) = 0.5e0 * (ener_n(i,j) + ener(i,j))
+
+           ! get primitive quantities
+           velx(i,j) = momx(i,j) / dens(i,j)
+           vely(i,j) = momy(i,j) / dens(i,j)
+           pres(i,j) = eos_getp((/dens(i,j), velx(i,j), vely(i,j), 0.0, ener(i,j)/))
+
          end do
        end do
        
-       do j = jlo, jhi
-         do i = ilo, ihi
-             velx(i,j) = momx(i,j) / dens(i,j)
-             vely(i,j) = momy(i,j) / dens(i,j)
-             pres(i,j) = eos_getp((/dens(i,j), velx(i,j), vely(i,j), 0.0, ener(i,j)/))
-
-             !velx(i,j) = max(abs(velx(i,j)), smallf)
-             !vely(i,j) = max(abs(vely(i,j)), smallf)
-             !pres(i,j) = max(pres(i,j), smallf)
-         end do
-       end do
-
     end subroutine RK2_SSP
 end module rk2_module
