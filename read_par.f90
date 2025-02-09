@@ -19,7 +19,7 @@ subroutine read_par()
         gamma = 1.4; cfl = 0.4; grav = 0.0
         xbctype = "periodic"; ybctype = "periodic"; problem = "none" 
         basenm = "def"; restart = .false.; usegrav = .false.;
-        recon_method = "weno3"
+        recon_method = "weno3"; flux_solver = "hllc"
  
         open(no, file='./par_input.par')
 
@@ -76,6 +76,8 @@ subroutine read_par()
                  read(buffer, *, iostat=ios) basenm
               case ('recon_method')
                  read(buffer, *, iostat=ios) recon_method
+              case ('flux_solver')
+                 read(buffer, *, iostat=ios) flux_solver
               case ('restart')
                  read(buffer, *, iostat=ios) restart
               case ('restart_no')
