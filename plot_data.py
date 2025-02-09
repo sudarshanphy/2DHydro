@@ -9,7 +9,7 @@ mpl.rcParams['font.serif'] = ['Times New Roman']
 mpl.rcParams['font.size'] = 20.0
 
 num = int(sys.argv[1])
-#num = 80
+#num = 0
 fname = "./kh_test_%04d.dat"%(num)
 fieldname = "dens"
 
@@ -62,7 +62,7 @@ dmax = np.max(data)
 
 fig = plt.figure(figsize=(12,12)) # , layout='constrained')
 ax = plt.axes()
-plt.title("2D Riemann problem (WENO5) at t= %8.3e"%(time))
+#plt.title("2D Riemann problem (WENO5) at t= %8.3e"%(time))
 plt.pcolormesh(X, Y, np.transpose(data), cmap='turbo', \
                vmax=2.1, vmin=0.9) # \
                #norm=mpl.colors.LogNorm(0.12,1.76))

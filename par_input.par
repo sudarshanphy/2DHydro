@@ -19,7 +19,8 @@ usegrav = .false.
 xbctype = "periodic"
 ybctype = "periodic"
 recon_method = "weno5"
-restart = .true.
+flux_solver = "hllc"
+restart = .false.
 restart_no = 50
 restart_step = 1197
 

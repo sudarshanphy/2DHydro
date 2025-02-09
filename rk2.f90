@@ -5,12 +5,14 @@ contains
     subroutine RK2_SSP(dens, velx, vely, pres, ener, dt)
 #include "header.h"      
        
-       use hllc_module, only: hllc
+       use riemann_module, only: hllc, hlle
        use recon_module, only: recon_getcellfaces
        use eos_module, only: eos_getp
        use sim_data, only: grav, usegrav, ilo, ihi, jlo, jhi, &
-                           gamma, dx, dy, yTpts, xTpts, smallf
+                           gamma, dx, dy, yTpts, xTpts, smallf, &
+                           flux_solver
        use applyBC_module, only: applyBC_all 
+       use misc_module, only: to_upper
        implicit none
        real(8), dimension(xTpts, yTpts), intent(inout) :: dens, velx, vely, pres, ener
        real(8), intent(in) :: dt 
@@ -78,8 +80,15 @@ contains
                Vright = (/yr_minus(i,j), yu_minus(i,j), &
                  yv_minus(i,j), 0.0e0, yp_minus(i,j)/)
 
-              call hllc(Uleft, Uright, "x", xF)
-              call hllc(Vleft, Vright, "y", yF)
+              if (to_upper(trim(flux_solver)) == "HLLC") then
+                !print *, "using HLLC"
+                call hllc(Uleft, Uright, "x", xF)
+                call hllc(Vleft, Vright, "y", yF)
+              else if (to_upper(trim(flux_solver)) == "HLLE") then
+                !print *, "using HLLE"
+                call hlle(Uleft, Uright, "x", xF)
+                call hlle(Vleft, Vright, "y", yF)
+              end if
               
               xrF(i,j) = xF(1); xruF(i,j) = xF(2); xrvF(i,j) = xF(3); xeF(i,j) = xF(5)
               yrF(i,j) = yF(1); yruF(i,j) = yF(2); yrvF(i,j) = yF(3); yeF(i,j) = yF(5)
