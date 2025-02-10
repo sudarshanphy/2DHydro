@@ -142,15 +142,12 @@ contains
                                                         &/)
 
               if (to_upper(trim(flux_solver)) == "HLLC") then
-                !print *, "using HLLC"
 #ifndef MHD
                 call hllc(Uleft, Uright, "x", xF)
                 call hllc(Vleft, Vright, "y", yF)
-#endif
-#ifdef MHD
-                ! MHD simulations only use HLLE solver
-                call hlle(Uleft, Uright, "x", xF)
-                call hlle(Vleft, Vright, "y", yF)
+#else
+                print *, "HLLC is only for pure Hydro simulation"
+                stop
 #endif
               else if (to_upper(trim(flux_solver)) == "HLLE") then
                 !print *, "using HLLE"

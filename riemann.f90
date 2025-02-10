@@ -1,7 +1,12 @@
 module riemann_module
 #include "header.h"
     implicit none
+
+    ! HLLC solver is only for pure hydro simulation
+    ! HLLE can be used for both pure Hydro and MHD simulation
+
 contains
+
 #ifndef MHD
     subroutine hllc(Uleft, Uright, Dir, Flux)
         use sim_data, only: gamma
@@ -327,6 +332,135 @@ contains
 #endif
         return
     end subroutine hlle
+
+#ifdef MHD
+    subroutine hlld(Uleft, Uright, Dir, Flux)
+        use sim_data, only: gamma
+        use eos_module, only: eos_gete
+        use misc_module, only: to_upper 
+        implicit none
+
+        real(8), dimension(9), intent(in) :: Uleft, Uright
+        character(len=1), intent(in) :: Dir
+        real(8), dimension(9), intent(out) :: Flux
+        real(8), dimension(9) :: FL, FR, UL, UR, FstarL, FstarR, UstarL, UstarR
+        real(8) :: dL, udL, vdL, wdL, pL, bxL, byL, bzL, bpL
+        real(8) :: dR, udR, vdR, wdR, pR, bxR, byR, bzR, bpR
+        real(8) :: sdR, sdL, ufL, ufR, vfL, vfR, wfL, wfR
+        real(8) :: eL, eR, cfL, cfR, ptL, ptR 
+        real(8) :: qL, qR, SL, SR, SM
+        real(8) :: dstarL, dstarR, pstar
+        real(8) :: dustarL, dustarR, dvstarL, dvstarR
+        real(8) :: dwstarL, dwstarR, estarL, estarR
+        real(8), dimension(3) :: n
+
+        dL = Uleft(1)
+        ufL = Uleft(2)
+        vfL = Uleft(3)
+        wfL = Uleft(4)
+        pL = Uleft(5)
+        bxL = Uleft(6)
+        byL = Uleft(7)
+        bzL = Uleft(8)
+        bpL = Uleft(9)
+
+        dR = Uright(1)
+        ufR = Uright(2)
+        vfR = Uright(3)
+        wfR = Uright(4)
+        pR = Uright(5)
+        bxR = Uright(6)
+        byR = Uright(7)
+        bzR = Uright(8)
+        bpR = Uright(9)
+
+        select case (to_upper(Dir))
+        case ('X')
+            n = (/1.00, 0.00, 0.00/)
+        case ('Y')
+            n = (/0.00, 1.00, 0.00/)
+        case ('Z')
+            n = (/0.00, 0.00, 1.00/)
+        case default
+            print *, "Wrong!! Direction should be X, Y, Z"
+            stop
+        end select
+
+        udL = ufL * dL
+        udR = ufR * dR
+
+        vdL = vfL * dL
+        vdR = vfR * dR
+
+        wdL = wfL * dL
+        wdR = wfR * dR
+
+        eL =  eos_gete(Uleft(1:8))
+        eR =  eos_gete(Uright(1:8))
+
+        qL = sum((/ufL, vfL, wfL/) * n)
+        qR = sum((/ufR, vfR, wfR/) * n)
+
+        ! magnetic field value in the normal direction
+        qBL = sum((/bxL, byL, bzL/) * n)
+        qBR = sum((/bxR, byR, bzR/) * n)
+        
+        ! B.B quantity
+        B2L = sum(Uleft(6:8) * Uleft(6:8))
+        B2R = sum(Uright(6:8) * Uright(6:8))
+
+        ! V.B quantity
+        vBL = sum(Uleft(2:4) * Uleft(6:8))
+        vBR = sum(Uright(2:4) * Uright(6:8))
+
+        ! fast magnetosonic wave speed
+        ! Miyoshi eqn 67 HLLD paper 
+        cfL = sqrt(((gamma * pL + B2L) + &
+          sqrt((gamma * pL + B2L)**2 - gamma * pL * 4.0 * qBL**2))/(2.0 * dL))
+
+        cfR = sqrt(((gamma * pR + B2R) + &
+          sqrt((gamma * pR + B2R)**2 - gamma * pR * 4.0 * qBR**2))/(2.0 * dR))
+
+        ptL = pL + 0.5e0 * B2L
+        ptR = pR + 0.5e0 * B2R
+
+        FL = (/dL * qL, &
+               dL * ufL * qL - qBL * bxL + (0.50 * B2L + pL) * n(1) , &
+               dL * vfL * qL - qBL * byL + (0.50 * B2L + pL) * n(2) , &
+               dL * wfL * qL - qBL * bzL + (0.50 * B2L + pL) * n(3) , &
+               qL * (eL + pL + 0.50 * B2L) - qBL * vBL              , &
+               qL * bxL - qBL * ufL                                 , &
+               qL * byL - qBL * vfL                                 , &
+               qL * bzL - qBL * wfL                                 , &
+               0.0/)
+        FR = (/dR * qR, &
+               dR * ufR * qR - qBR * bxR + (0.50 * B2R + pR) * n(1) , &
+               dR * vfR * qR - qBR * byR + (0.50 * B2R + pR) * n(2) , &
+               dR * wfR * qR - qBR * bzR + (0.50 * B2R + pR) * n(3) , &
+               qR * (eR + pR + 0.50 * B2R) - qBR * vBR              , &
+               qR * bxR - qBR * ufR                                 , &
+               qR * byR - qBR * vfR                                 , &
+               qR * bzR - qBR * wfR                                 , &
+               0.0/)
+
+        SL = min(qL, qR) - max(cfL, cfR) 
+        SR = max(qL, qR) + max(cfL, cfR) 
+        
+        UL = (/dL, dL * ufL, dL * vfL, dL * wfL, eL, bxL, byL, bzL, bpL/)
+        UR = (/dR, dR * ufR, dR * vfR, dR * wfR, eR, bxR, byR, bzR, bpR/)
+        
+        if (0.000 > SL) then
+            Flux = FL
+        else if (SR < 0.000) then
+            Flux = FR
+        else
+           ! to do
+           Flux = 0.0 
+        end if
+        return
+    end subroutine hlld
+#endif
+
 
 end module riemann_module
 
