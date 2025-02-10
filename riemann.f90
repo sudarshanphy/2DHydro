@@ -348,7 +348,7 @@ contains
         real(8) :: dR, udR, vdR, wdR, pR, bxR, byR, bzR, bpR
         real(8) :: sdR, sdL, ufL, ufR, vfL, vfR, wfL, wfR
         real(8) :: eL, eR, cfL, cfR, ptL, ptR 
-        real(8) :: qL, qR, SL, SR, SM
+        real(8) :: qL, qR, SL, SR, SM, qBL, qBR, B2L, B2R, vBL, vBR
         real(8) :: dstarL, dstarR, pstar
         real(8) :: dustarL, dustarR, dvstarL, dvstarR
         real(8) :: dwstarL, dwstarR, estarL, estarR
