@@ -8,7 +8,7 @@ FFLAGS=-g -cpp -fdefault-real-8
 
 #SRC=misc.f90 recon.f90 eos.f90 hllc.f90 test_hllc.f90
 #SRC = io.f90 test_io.f90
-SRC = sim_data.f90 misc.f90 read_par.f90 grid_init.f90 eos.f90 \
+SRC = sim_data.f90 misc.f90 read_par.f90 grid_init.f90 eos.f90 glm.f90 \
 			applyBC.f90 sim_init.f90 sim_restart.f90 io.f90 recon.f90 riemann.f90 rk2.f90 main.f90
 
 #object files have .o extension

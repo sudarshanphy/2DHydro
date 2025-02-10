@@ -1,7 +1,8 @@
 module riemann_module
+#include "header.h"
     implicit none
 contains
-
+#ifndef MHD
     subroutine hllc(Uleft, Uright, Dir, Flux)
         use sim_data, only: gamma
         use eos_module, only: eos_gete
@@ -59,8 +60,8 @@ contains
         wdL = wfL * dL
         wdR = wfR * dR
 
-        eL =  eos_gete((/dL, ufL, vfL, wfL, pL/))
-        eR =  eos_gete((/dR, ufR, vfR, wfR, pR/))
+        eL =  eos_gete(Uleft(1:5))
+        eR =  eos_gete(Uright(1:5))
 
         HL = (eL + pL) / dL
         HR = (eR + pR) / dR
@@ -134,23 +135,33 @@ contains
         end if
         return
     end subroutine hllc
+#endif
 
     subroutine hlle(Uleft, Uright, Dir, Flux)
         use sim_data, only: gamma
+#ifdef MHD
+        use sim_data, only: ch
+#endif
         use eos_module, only: eos_gete
         use misc_module, only: to_upper 
         implicit none
 
-        real(8), dimension(5), intent(in) :: Uleft, Uright
         character(len=1), intent(in) :: Dir
+#ifdef MHD
+        real(8), dimension(9), intent(in) :: Uleft, Uright
+        real(8), dimension(9), intent(out) :: Flux
+        real(8), dimension(9) :: FL, FR, UL, UR, Fstar
+#else
+        real(8), dimension(5), intent(in) :: Uleft, Uright
         real(8), dimension(5), intent(out) :: Flux
         real(8), dimension(5) :: FL, FR, UL, UR, Fstar
-        real(8) :: dL, udL, vdL, wdL, pL
-        real(8) :: dR, udR, vdR, wdR, pR
+#endif
+        real(8) :: dL, udL, vdL, wdL, pL, bxL, byL, bzL, bpL
+        real(8) :: dR, udR, vdR, wdR, pR, bxR, byR, bzR, bpR
         real(8) :: sdR, sdL, ufL, ufR, vfL, vfR, wfL, wfR
-        real(8) :: eL, eR, HL, HR, cL, cR
+        real(8) :: eL, eR, HL, HR, cL, cR, B2L, B2R, vBL, vBR
         real(8) :: ubar, vbar, wbar, Hbar, cbar
-        real(8) :: qL, qR, qbar, SL, SR
+        real(8) :: qL, qR, qbar, qBL, qBR, SL, SR
         real(8), dimension(3) :: n
 
         dL = Uleft(1)
@@ -164,6 +175,18 @@ contains
         vfR = Uright(3)
         wfR = Uright(4)
         pR = Uright(5)
+
+#ifdef MHD
+        bxL = Uleft(6)
+        byL = Uleft(7)
+        bzL = Uleft(8)
+        bpL = Uleft(9)
+        
+        bxR = Uright(6)
+        byR = Uright(7)
+        bzR = Uright(8)
+        bpR = Uright(9)
+#endif
 
         select case (to_upper(Dir))
         case ('X')
@@ -189,8 +212,13 @@ contains
         wdL = wfL * dL
         wdR = wfR * dR
 
-        eL =  eos_gete((/dL, ufL, vfL, wfL, pL/))
-        eR =  eos_gete((/dR, ufR, vfR, wfR, pR/))
+#ifdef MHD
+        eL =  eos_gete(Uleft(1:8))
+        eR =  eos_gete(Uright(1:8))
+#else
+        eL =  eos_gete(Uleft(1:5))
+        eR =  eos_gete(Uright(1:5))
+#endif
 
         HL = (eL + pL) / dL
         HR = (eR + pR) / dR
@@ -213,7 +241,7 @@ contains
 
         SL = min(min(qL - cL, qbar - cbar), 0.0)
         SR = max(max(qR + cR, qbar + cbar), 0.0)
-
+#ifndef MHD
         FL = (/dL * qL, &
                dL * ufL * qL + pL * n(1), &
                dL * vfL * qL + pL * n(2), &
@@ -229,14 +257,60 @@ contains
         UR = (/dR, dR * ufR, dR * vfR, dR * wfR, eR/)
 
         Fstar = (SR * FL - SL * FR + (SL * SR * (UR - UL))) / (SR - SL)
+#endif
+#ifdef MHD
+        ! magnetic field value in the normal direction
+        qBL = sum((/bxL, byL, bzL/) * n)
+        qBR = sum((/bxR, byR, bzR/) * n)
 
+        B2L = sum(Uleft(6:8) * Uleft(6:8))
+        B2R = sum(Uright(6:8) * Uright(6:8))
+
+        vBL = sum(Uleft(2:4) * Uleft(6:8))
+        vBR = sum(Uright(2:4) * Uright(6:8))
+
+        FL = (/dL * qL, &
+               dL * ufL * qL - qBL * bxL + (0.50 * B2L + pL) * n(1) , &
+               dL * vfL * qL - qBL * byL + (0.50 * B2L + pL) * n(2) , &
+               dL * wfL * qL - qBL * bzL + (0.50 * B2L + pL) * n(3) , &
+               qL * (eL + pL + 0.50 * B2L) - qBL * vBL              , &
+               qL * bxL - qBL * ufL                                 , &
+               qL * byL - qBL * vfL                                 , &
+               qL * bzL - qBL * wfL                                 , &
+               0.0/)
+        FR = (/dR * qR, &
+               dR * ufR * qR - qBR * bxR + (0.50 * B2R + pR) * n(1) , &
+               dR * vfR * qR - qBR * byR + (0.50 * B2R + pR) * n(2) , &
+               dR * wfR * qR - qBR * bzR + (0.50 * B2R + pR) * n(3) , &
+               qR * (eR + pR + 0.50 * B2R) - qBR * vBR              , &
+               qR * bxR - qBR * ufR                                 , &
+               qR * byR - qBR * vfR                                 , &
+               qR * bzR - qBR * wfR                                 , &
+               0.0/)
+
+        UL = (/dL, dL * ufL, dL * vfL, dL * wfL, eL, bxL, byL, bzL, bpL/)
+        UR = (/dR, dR * ufR, dR * vfR, dR * wfR, eR, bxR, byR, bzR, bpR/)
+
+        Fstar = (SR * FL - SL * FR + (SL * SR * (UR - UL))) / (SR - SL)
+#endif
         if (0.000 < SL) then
             Flux = FL
-        else if (SL <= 0.000 .and. 0.000 <= SR) then
-            Flux = Fstar
-        else
+        else if (SR < 0.000) then
             Flux = FR
+        else
+            Flux = Fstar
         end if
+#ifdef MHD
+        Flux(9) = 0.50 * ((ch * ch) * (qBL + qBR) - ch * (bpR - bpL))
+        select case (to_upper(Dir))
+        case ('X')
+           Flux(6) = 0.50 * ((bpL + bpR) - ch * (qBR - qBL))
+        case ('Y')
+           Flux(7) = 0.50 * ((bpL + bpR) - ch * (qBR - qBL))
+        case ('Z')
+           Flux(8) = 0.50 * ((bpL + bpR) - ch * (qBR - qBL))
+        end select
+#endif
         return
     end subroutine hlle
 

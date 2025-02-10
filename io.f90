@@ -1,9 +1,15 @@
 module io_module
+#include "header.h"
+
   implicit none
 contains
   
   subroutine write_output(t, step, x, y, &
-                          d, u, v, p, e, outputno, restart_init)
+                          d, u, v, p, e, &
+#ifdef MHD 
+                          bx, by, psi,   &
+#endif
+                          &outputno, restart_init)
    use sim_data, only: nx, ny, gamma, basenm, dx, dy
    implicit none
   real, intent(in) :: t
@@ -11,6 +17,9 @@ contains
   real, dimension(nx), intent(in) :: x
   real, dimension(ny), intent(in) :: y
   real, dimension(nx, ny), intent(in) :: d, u, v, p, e
+#ifdef MHD
+  real, dimension(nx, ny), intent(in) :: bx, by, psi
+#endif
   logical, optional, intent(in) :: restart_init
   integer :: ionum, i, j
   character(len=256) :: fname
@@ -32,10 +41,19 @@ contains
   write(ionum, *) "#nx = ", nx , ", dx = ", dx
   write(ionum, *) "#ny = ", ny , ", dy = ", dy
   write(ionum, *) "#gamma = ", gamma
+#ifdef MHD
+  write(ionum, *) "# xcenter  ycenter  dens  velx  vely  pres  ener  bmfx  bmfy  bpsi"
+#else
   write(ionum, *) "# xcenter  ycenter  dens  velx  vely  pres  ener"
+#endif
   do i = 1, nx
      do j = 1, ny
+#ifdef MHD
+        write(ionum, 12) x(i), y(j), d(i,j), u(i,j), v(i,j), p(i,j), e(i,j), &
+                                     &  bx(i,j), by(i,j), psi(i,j)
+#else
         write(ionum, 12) x(i), y(j), d(i,j), u(i,j), v(i,j), p(i,j), e(i,j)
+#endif
      end do
      write(ionum, *) "####"
   end do

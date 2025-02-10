@@ -1,4 +1,5 @@
 module applyBC_module
+#include "header.h"
   implicit none
 contains
 
@@ -71,11 +72,17 @@ contains
     end select
   end subroutine applyBC
   
-  subroutine applyBC_all(dens, velx, vely, pres, ener)
+  subroutine applyBC_all(dens, velx, vely, pres, ener &
+#ifdef MHD
+                             , bmfx, bmfy, bpsi       &
+#endif
+                                                      &)
     use sim_data, only: xTpts, yTpts
     implicit none
     real, dimension(xTpts, yTpts), intent(inout) :: dens, velx, vely, pres, ener
-
+#ifdef MHD
+    real, dimension(xTpts, yTpts), intent(inout) :: bmfx, bmfy, bpsi
+#endif
     call applyBC(dens, "x") 
     call applyBC(velx, "x", .true.) 
     call applyBC(vely, "x") 
@@ -87,6 +94,15 @@ contains
     call applyBC(vely, "y", .true.) 
     call applyBC(pres, "y") 
     call applyBC(ener, "y")
+
+#ifdef MHD
+    call applyBC(bmfx, "x")
+    call applyBC(bmfx, "y")
+    call applyBC(bmfy, "x")
+    call applyBC(bmfy, "y")
+    call applyBC(bpsi, "x")
+    call applyBC(bpsi, "y")
+#endif
 
   end subroutine applyBC_all
 end module applyBC_module
