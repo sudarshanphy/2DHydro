@@ -11,8 +11,8 @@ module sim_data
                               basenm, recon_method, flux_solver
   logical, save :: restart, usegrav
   real, parameter :: PI = 4.0 * atan(1.0)
-  real, parameter :: smallf = 1.0e-30 
-#ifdef MHD
+  real, parameter :: smallf = 1.0e-30
+
+  ! only used by MHD runs 
   real, save :: ch !speed for divergence cleaning
-#endif
 end module sim_data

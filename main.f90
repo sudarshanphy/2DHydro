@@ -43,12 +43,15 @@ program hydro
   if (.not. restart) then
     step = 0
     outputno = 0
+
     !initialize the problem
-    call init_problem(xval, yval, dens, velx, vely, pres, ener &
 #ifdef MHD
-                                    & , bmfx, bmfy, bpsi &
+    call init_problem(xval, yval, dens, velx, vely, pres, ener, &
+                                              bmfx, bmfy, bpsi )
+#else
+    call init_problem(xval, yval, dens, velx, vely, pres, ener)
 #endif
-                                                               &)
+                                             
     call write_output(t0, step, xval, yval, &
                       dens(ilo:ihi, jlo:jhi), velx(ilo:ihi, jlo:jhi), &
                       vely(ilo:ihi, jlo:jhi), pres(ilo:ihi, jlo:jhi), &
@@ -60,11 +63,15 @@ program hydro
                       outputno) 
 
   else
-    call restart_problem(restart_no, t0, dens, velx, vely, pres, ener &
+
+    ! restart a problem from an output file
 #ifdef MHD
-                                                 & , bmfx, bmfy, bpsi &
+    call restart_problem(restart_no, t0, dens, velx, vely, pres, ener, &
+                                                     bmfx, bmfy, bpsi )
+#else
+    call restart_problem(restart_no, t0, dens, velx, vely, pres, ener)
 #endif
-                                                                      &)
+
     step = restart_step
     outputno = restart_no
     call write_output(t0, step, xval, yval, &
@@ -79,11 +86,11 @@ program hydro
 
   end if
 
-  call applyBC_all(dens, velx, vely, pres, ener &
 #ifdef MHD
-                       , bmfx, bmfy, bpsi       &  
+  call applyBC_all(dens, velx, vely, pres, ener, bmfx, bmfy, bpsi)
+#else
+  call applyBC_all(dens, velx, vely, pres, ener)
 #endif  
-                                                &)
    
   time = t0
   timeio = time + out_dt
@@ -93,11 +100,11 @@ program hydro
     io_output = .false.
     
     ! compute dt
-    dt = get_dt(dens, velx, vely, pres &
 #ifdef MHD
-                    , bmfx, bmfy       &
+    dt = get_dt(dens, velx, vely, pres, bmfx, bmfy)
+#else    
+    dt = get_dt(dens, velx, vely, pres) 
 #endif
-                                       &)
 
     if (time + dt > tf) then
       dt = tf - time
@@ -110,20 +117,18 @@ program hydro
       io_output = .true.
     end if
 
-#ifdef MHD
-    call glm(bpsi, dt)
-#endif
 
-    call RK2_SSP(dt, dens, velx, vely, pres, ener &
 #ifdef MHD
-                         , bmfx, bmfy, bpsi       &   
-#endif
-                                                  &)
-   call applyBC_all(dens, velx, vely, pres, ener &
-#ifdef MHD
-                        , bmfx, bmfy, bpsi       &  
+    ! glm update psi 
+    call glm(bpsi, dt)
+    ! do a SSP RK2 step
+    call RK2_SSP(dt, dens, velx, vely, pres, ener, bmfx, bmfy, bpsi)
+    ! apply BC
+    call applyBC_all(dens, velx, vely, pres, ener, bmfx, bmfy, bpsi)
+#else
+    call RK2_SSP(dt, dens, velx, vely, pres, ener)
+    call applyBC_all(dens, velx, vely, pres, ener) 
 #endif  
-                                                 &)
     time = time + dt
     step = step + 1
 
