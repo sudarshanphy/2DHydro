@@ -161,7 +161,7 @@ contains
         real(8) :: sdR, sdL, ufL, ufR, vfL, vfR, wfL, wfR
         real(8) :: eL, eR, HL, HR, cL, cR, B2L, B2R, vBL, vBR
         real(8) :: ubar, vbar, wbar, Hbar, cbar
-        real(8) :: qL, qR, qbar, qBL, qBR, SL, SR
+        real(8) :: qL, qR, qbar, qBL, qBR, SL, SR, cfL, cfR
         real(8), dimension(3) :: n
 
         dL = Uleft(1)
@@ -220,11 +220,15 @@ contains
         eR =  eos_gete(Uright(1:5))
 #endif
 
-        HL = (eL + pL) / dL
-        HR = (eR + pR) / dR
-
         cL = sqrt(gamma * pL / dL)
         cR = sqrt(gamma * pR / dR)
+
+        qL = sum((/ufL, vfL, wfL/) * n)
+        qR = sum((/ufR, vfR, wfR/) * n)
+
+#ifndef MHD
+        HL = (eL + pL) / dL
+        HR = (eR + pR) / dR
 
         ubar = (ufL * sdL + ufR * sdR) / (sdL + sdR)
         vbar = (vfL * sdL + vfR * sdR) / (sdL + sdR)
@@ -234,14 +238,11 @@ contains
 
         cbar = sqrt((gamma - 1.00) * (Hbar - 0.50 * (ubar**2 + vbar**2 + wbar**2)))
 
-        qL = sum((/ufL, vfL, wfL/) * n)
-        qR = sum((/ufR, vfR, wfR/) * n)
-
         qbar = sum((/ubar, vbar, wbar/) * n)
 
         SL = min(min(qL - cL, qbar - cbar), 0.0)
         SR = max(max(qR + cR, qbar + cbar), 0.0)
-#ifndef MHD
+
         FL = (/dL * qL, &
                dL * ufL * qL + pL * n(1), &
                dL * vfL * qL + pL * n(2), &
@@ -262,13 +263,26 @@ contains
         ! magnetic field value in the normal direction
         qBL = sum((/bxL, byL, bzL/) * n)
         qBR = sum((/bxR, byR, bzR/) * n)
-
+        
+        ! B.B quantity
         B2L = sum(Uleft(6:8) * Uleft(6:8))
         B2R = sum(Uright(6:8) * Uright(6:8))
 
+        ! V.B quantity
         vBL = sum(Uleft(2:4) * Uleft(6:8))
         vBR = sum(Uright(2:4) * Uright(6:8))
+        
+        ! fast magnetosonic wave speed
+        ! Miyoshi eqn 67 HLLD paper 
+        cfL = sqrt(((gamma * pL + B2L) + &
+          sqrt((gamma * pL + B2L)**2 - gamma * pL * 4.0 * qBL**2))/(2.0 * dL))
 
+        cfR = sqrt(((gamma * pR + B2R) + &
+          sqrt((gamma * pR + B2R)**2 - gamma * pR * 4.0 * qBR**2))/(2.0 * dR))
+
+        SL = min(qL, qR) - max(cfL, cfR) 
+        SR = max(qL, qR) + max(cfL, cfR) 
+        
         FL = (/dL * qL, &
                dL * ufL * qL - qBL * bxL + (0.50 * B2L + pL) * n(1) , &
                dL * vfL * qL - qBL * byL + (0.50 * B2L + pL) * n(2) , &
