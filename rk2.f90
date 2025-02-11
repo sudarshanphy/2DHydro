@@ -9,9 +9,9 @@ contains
 #endif
                                                         &)
 #ifndef MHD       
-       use riemann_module, only: hllc, hlle
+       use riemann_module, only: hllc,hlle
 #else
-       use riemann_module, only: hlle
+       use riemann_module, only: hlle, hlld
 #endif
        use recon_module, only: recon_getcellfaces
        use eos_module, only: eos_getp
@@ -150,9 +150,16 @@ contains
                 stop
 #endif
               else if (to_upper(trim(flux_solver)) == "HLLE") then
-                !print *, "using HLLE"
                 call hlle(Uleft, Uright, "x", xF)
                 call hlle(Vleft, Vright, "y", yF)
+              else if (to_upper(trim(flux_solver)) == "HLLD") then
+#ifdef MHD
+                call hlld(Uleft, Uright, "x", xF)
+                call hlld(Vleft, Vright, "y", yF)
+#else
+                print *, "HLLD is only for MHD simulation"
+                stop
+#endif
               end if
               
               xrF(i,j) = xF(1); xruF(i,j) = xF(2); xrvF(i,j) = xF(3); xeF(i,j) = xF(5)
