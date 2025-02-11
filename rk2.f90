@@ -160,6 +160,11 @@ contains
                 print *, "HLLD is only for MHD simulation"
                 stop
 #endif
+              else
+                print *, "Available solvers:"
+                print *, "HLLE/HLLC -> Hydro"
+                print *, "HLLE/HLLD -> MHD"
+                stop
               end if
               
               xrF(i,j) = xF(1); xruF(i,j) = xF(2); xrvF(i,j) = xF(3); xeF(i,j) = xF(5)
