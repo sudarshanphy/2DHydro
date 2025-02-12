@@ -9,9 +9,9 @@ mpl.rcParams['font.serif'] = ['Times New Roman']
 mpl.rcParams['font.size'] = 20.0
 
 #num = int(sys.argv[1])
-num = 40
-fname = "./otmhd_test_%04d.dat"%(num)
-fieldname = "pres"
+num = 0
+fname = "./output/rotormhd_test_%04d.dat"%(num)
+fieldname = "dens"
 
 f = open(fname, "r")
 

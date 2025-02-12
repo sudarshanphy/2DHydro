@@ -28,7 +28,7 @@ contains
 12 format (1x, 50(es25.18, :, 1x))
 
    write(int_to_str, "(I4.4)") fno
-   fname = trim(adjustl(basenm))//"_"//trim(adjustl(int_to_str))//".dat"
+   fname = "./output/"//trim(adjustl(basenm))//"_"//trim(adjustl(int_to_str))//".dat"
    open(unit=ionum, file=fname, status="old")
    read(ionum, '(A)') line1
    read(ionum, *) line2

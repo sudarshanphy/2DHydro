@@ -20,7 +20,8 @@ contains
     real, dimension(xTpts, yTpts), intent(inout) :: bmfx, bmfy,  bpsi
 #endif
     integer :: i, j, iInt, jInt
-    
+    real :: r
+
     select case (to_upper(trim(problem)))
 
     case ("SEDOV")
@@ -208,22 +209,36 @@ contains
         end do
       end do
 
-    case ("OTHD")
-      print *, "2D Orszag-Tang pure HD run"
+    case ("ROTORMHD")
+      print *, "2D ROTOR MHD Problem"
+      ! setup take from "Limiting and divergence cleaning for continuous finite
+      ! element discretizations of the MHD equations" by Dmitri Kuzmin
+      ! page no 18
       do j = jlo, jhi
         do i = ilo, ihi
            ! shift to interior index
            iInt = i - Gpts
            jInt = j - Gpts
-           dens(i,j) = gamma**2
-           pres(i,j) = gamma
-           velx(i,j) = -sin(y(j))
-           vely(i,j) = sin(x(i))
-#ifdef MHD
-           bmfx(i,j) = 0.0e0 !-sin(y(j))
-           bmfy(i,j) = 0.0e0 !sin(2.0*x(i))
+           r = sqrt((x(iInt) - 0.5)**2 + (y(jInt) - 0.5)**2)
+           if (r < 0.1) then
+             dens(i,j) = 10.0
+             velx(i,j) = 10.0 * (0.5 - y(jInt)) 
+             vely(i,j) = 10.0 * (x(iInt) - 0.5)
+           else if (r > 0.115) then
+             dens(i,j) = 1.0
+             velx(i,j) = 0.0
+             vely(i,j) = 0.0
+           else
+             dens(i,j) = 1.0 + 9.0 * (0.115 - r)/(r - 0.1)
+             velx(i,j) =  100.0 * (0.115 - r)/(r - 0.1) * (0.5 - y(jInt)) / dens(i,j)
+             vely(i,j) =  100.0 * (0.115 - r)/(r - 0.1) * (x(iInt) - 0.5) / dens(i,j)
+             ! need this to make sure density doen't blow up at initialization
+             dens(i,j) = min(dens(i,j), 10.0)
+           end if
+           pres(i,j) = 0.5
+           bmfx(i,j) = 2.5 / sqrt(4.0 * PI)
+           bmfy(i,j) = 0.0
            bpsi(i,j) = 0.0e0
-#endif 
 #ifdef MHD
            ener(i,j) = eos_gete((/dens(i,j), velx(i,j), vely(i,j), 0.0, pres(i,j), &
                                   bmfx(i,j), bmfy(i,j), 0.0/)) 
