@@ -45,7 +45,11 @@ for line in lines[5:]:
     if (lst[0] != "####"):
         x_array.append(float(lst[0]))
         y_array.append(float(lst[1]))
-        data.append(float(lst[index]))
+        try:
+            data.append(float(lst[index]))
+        except:
+            data.append(float(0.0))            
+        
     
     
 x_array = np.array(x_array)
