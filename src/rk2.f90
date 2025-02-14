@@ -112,7 +112,12 @@ contains
 
           do j=jlo, jhi
             do i = ilo, ihi
-               sgrav = sterm * (/1.0e0, dens(i,j), dens(i,j), 0.0, momy(i,j),0.0,0.0,0.0,0.0/)
+#ifdef MHD
+               sgrav = sterm * (/1.0e0, 0.0, Up1(i,j,DENS_CONS), 0.0, Up1(i,j,MOMY_CONS), &
+                                 0.0,0.0,0.0,0.0/)
+#else
+               sgrav = sterm * (/1.0e0, 0.0, Up1(i,j,DENS_CONS), 0.0, Up1(i,j,MOMY_CONS)/)
+#endif
                Up1(i,j,:) = Up1(i,j,:) &
                             + (dt/dx) * (xF(i,j,:) - xF(i+1,j,:)) &
                             + (dt/dy) * (yF(i,j,:) - yF(i,j+1,:)) &
