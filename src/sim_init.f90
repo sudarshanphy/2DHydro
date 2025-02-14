@@ -40,10 +40,32 @@ contains
            if (sqrt(x(iInt)**2 + y(jInt)**2) <= 0.1) then
              solnVar(i,j,PRES_VAR) = 1.0e1
            end if
-           solnVar(i,j,ENER_VAR) = eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END-1)) 
+           solnVar(i,j,ENER_VAR) = eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
         end do
       end do
-#if 0
+    
+    case ("CONSTANT")
+      print *, "Sedov problem selected"
+      do j = jlo, jhi
+        do i = ilo, ihi
+           ! shift to interior index
+           iInt = i - Gpts
+           jInt = j - Gpts
+
+           ! initialize the fields
+           solnVar(i,j, DENS_VAR) = 1.0e0
+           solnVar(i,j, VELX_VAR) = 0.0e0
+           solnVar(i,j, VELY_VAR) = 0.0e0
+           solnVar(i,j, PRES_VAR) = 1.0e0
+
+           ! add a region with very high pressure
+           !if (sqrt(x(iInt)**2 + y(jInt)**2) <= 0.1) then
+           !  solnVar(i,j,PRES_VAR) = 1.0e1
+           !end if
+           solnVar(i,j,ENER_VAR) = eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
+        end do
+      end do
+
     case ("KH")
       print *, "Kelvin-Helmholtz (KH) problem selected"
       do j = jlo, jhi
@@ -54,34 +76,24 @@ contains
 
            ! initialize the fields
            if (abs(y(jInt) - 0.5) > 0.25) then
-             dens(i,j) = 1.0e0
-             velx(i,j) = -0.5e0
-             vely(i,j) = 0.0e0
-             pres(i,j) = 2.5e0
+             solnVar(i,j, DENS_VAR) = 1.0e0
+             solnVar(i,j, VELX_VAR) = -0.5e0
+             solnVar(i,j, VELY_VAR) = 0.0e0
+             solnVar(i,j, PRES_VAR) = 2.5e0
            else
-             dens(i,j) = 2.0e0
-             velx(i,j) = 0.5e0
-             vely(i,j) = 0.0e0
-             pres(i,j) = 2.5e0
+             solnVar(i,j, DENS_VAR) = 2.0e0
+             solnVar(i,j, VELX_VAR) = 0.5e0
+             solnVar(i,j, VELY_VAR) = 0.0e0
+             solnVar(i,j, PRES_VAR) = 2.5e0
            end if
-#ifdef MHD
-           bmfx(i,j) = 0.0e0
-           bmfy(i,j) = 0.0e0
-           bpsi(i,j) = 0.0e0
-#endif 
            ! give velocity perturbations
            if (abs(y(jInt) - 0.25) < 0.1) then
-              vely(i,j) = 0.05 * sin(2.0 * 2.0 * PI * x(iInt))
+              solnVar(i,j, VELY_VAR) = 0.05 * sin(2.0 * 2.0 * PI * x(iInt))
            end if
            if (abs(y(jInt) - 0.75) < 0.1) then
-              vely(i,j) = 0.05 * sin(2.0 * 2.0 * PI * x(iInt))
+              solnVar(i,j, VELY_VAR) = 0.05 * sin(2.0 * 2.0 * PI * x(iInt))
            end if
-#ifdef MHD
-           ener(i,j) = eos_gete((/dens(i,j), velx(i,j), vely(i,j), 0.0, pres(i,j), &
-                                  bmfx(i,j), bmfy(i,j), 0.0/)) 
-#else
-           ener(i,j) = eos_gete((/dens(i,j), velx(i,j), vely(i,j), 0.0, pres(i,j)/)) 
-#endif
+           solnVar(i,j,ENER_VAR) = eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
         end do
       end do
 
@@ -236,7 +248,6 @@ contains
 #endif
         end do
       end do
-#endif
 
     case default
       print *, "such problem not defined"

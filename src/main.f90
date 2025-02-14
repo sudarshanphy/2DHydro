@@ -53,9 +53,7 @@ program hydro
 
   end if
 
-  !print *, solnVar(ilo,jlo,DENS_VAR), solnVar(ilo-1,jlo,DENS_VAR), solnVar(ilo,jlo-1, DENS_VAR) 
   call applyBC_all(solnVar(:,:,:))
-  !print *, solnVar(ilo,jlo,DENS_VAR), solnVar(ilo-1,jlo,DENS_VAR), solnVar(ilo,jlo-1, DENS_VAR) 
    
   time = t0
   timeio = time + out_dt
@@ -84,6 +82,7 @@ program hydro
 #endif 
     ! do a SSP RK2 step
     call RK2_SSP(dt, solnVar(:,:,:))
+    print *, "rk done"
     ! apply BC
     call applyBC_all(solnVar(:,:,:))
 
@@ -92,7 +91,7 @@ program hydro
 
     if (io_output) then
       outputno = outputno + 1
-      call write_output(time, step, xval, yval, solnVar, outputno)
+      call write_output(time, step, xval, yval, solnVar(ilo:ihi, jlo:jhi, :), outputno)
       print *, "$$$ Step: ", step," || time = ", time, " || output # = ", outputno," $$$" 
 
     end if

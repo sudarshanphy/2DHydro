@@ -91,7 +91,7 @@ contains
          call applyBC(solnVar(:,:,n), "y")
       end if
     end do
-
+     
   end subroutine applyBC_all
 end module applyBC_module
 

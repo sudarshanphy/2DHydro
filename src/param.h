@@ -25,3 +25,27 @@
 #endif
 
 #define NVAR_NUMBER (NVAR_END - NVAR_BEGIN + 1)
+
+#if 0
+ Number of conserved variable in the simulation:
+ fluxes for the quantities that we get from riemann solver
+#endif 
+#define NCONSVAR_BEGIN 1
+
+#define DENS_CONS 1
+#define MOMX_CONS 2
+#define MOMY_CONS 3
+#define MOMZ_CONS 4
+#define ENER_CONS 5
+#define NCONSVAR_END 5
+
+#ifdef MHD
+#define BMFX_CONS 6
+#define BMFY_CONS 7
+#define BMFZ_CONS 8
+#define BPSI_CONS 9
+
+#define NCONSVAR_END 9
+#endif
+
+#define NCONSVAR_NUMBER (NCONSVAR_END - NCONSVAR_BEGIN + 1)

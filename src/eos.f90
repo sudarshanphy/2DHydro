@@ -1,29 +1,26 @@
 module eos_module
 #include "header.h"
+#include "param.h"
   implicit none
 contains
 
     function eos_getp(U) result(pf)
         use sim_data, only: gamma
         implicit none
-#ifdef MHD
-        real :: U(9)
-#else
-        real :: U(5)
-#endif
+        real, dimension(NVAR_NUMBER) :: U
         real :: pf
         real :: df, uf, vf, wf, ef, bxf, byf, bzf
 
-        df = U(1)
-        uf = U(2)
-        vf = U(3)
-        wf = U(4)
-        ef = U(5)
+        df = U(DENS_VAR)
+        uf = U(VELX_VAR)
+        vf = U(VELY_VAR)
+        wf = U(VELZ_VAR)
+        ef = U(ENER_VAR)
         bxf = 0.0; byf = 0.0; bzf = 0.0
 #ifdef MHD
-        bxf = U(6)
-        byf = U(7)
-        bzf = U(8)
+        bxf = U(BMFX_VAR)
+        byf = U(BMFY_VAR)
+        bzf = U(BMFZ_VAR)
 #endif
 
         pf = (ef - 0.5 * (df * (uf**2 + vf**2 + wf**2) + &
@@ -34,24 +31,20 @@ contains
     function eos_gete(U) result(ef)
         use sim_data, only: gamma
         implicit none
-#ifdef MHD
-        real :: U(9)
-#else
-        real :: U(5)
-#endif
+        real, dimension(NVAR_NUMBER) :: U
         real :: ef
         real :: df, uf, vf, wf, pf, bxf, byf, bzf
 
-        df = U(1)
-        uf = U(2)
-        vf = U(3)
-        wf = U(4)
-        pf = U(5)
+        df = U(DENS_VAR)
+        uf = U(VELX_VAR)
+        vf = U(VELY_VAR)
+        wf = U(VELZ_VAR)
+        pf = U(PRES_VAR)
         bxf = 0.0; byf = 0.0; bzf = 0.0
 #ifdef MHD
-        bxf = U(6)
-        byf = U(7)
-        bzf = U(8)
+        bxf = U(BMFX_VAR)
+        byf = U(BMFY_VAR)
+        bzf = U(BMFZ_VAR)
 #endif
 
         ef = pf/(gamma - 1.0) + 0.5 * (df * (uf**2 + vf**2 + wf**2) + &

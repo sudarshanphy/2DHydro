@@ -65,8 +65,8 @@ contains
         wdL = wfL * dL
         wdR = wfR * dR
 
-        eL =  eos_gete(Uleft(1:5))
-        eR =  eos_gete(Uright(1:5))
+        eL =  eos_gete((/Uleft(1:5),0.0/))
+        eR =  eos_gete((/Uright(1:5),0.0/))
 
         HL = (eL + pL) / dL
         HR = (eR + pR) / dR
@@ -225,11 +225,11 @@ contains
         qR = Uright(imn)
 
 #ifdef MHD
-        eL =  eos_gete(Uleft(1:8))
-        eR =  eos_gete(Uright(1:8))
+        eL =  eos_gete((/Uleft(1:8),0.0/))
+        eR =  eos_gete((/Uright(1:8),0.0/))
 #else
-        eL =  eos_gete(Uleft(1:5))
-        eR =  eos_gete(Uright(1:5))
+        eL =  eos_gete((/Uleft(1:5),0.0/))
+        eR =  eos_gete((/Uright(1:5),0.0/))
 #endif
 
 #ifndef MHD
