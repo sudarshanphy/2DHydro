@@ -1,5 +1,4 @@
 module sim_restart
-#include "header.h"
 #include "param.h"
   implicit none
 contains

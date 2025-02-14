@@ -1,6 +1,4 @@
 subroutine glm(bpsi, dt)
-#include "header.h"
-
   use sim_data, only: ch, yTpts, xTpts
   implicit none
   real(8), dimension(xTpts, yTpts), intent(inout) :: bpsi

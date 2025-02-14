@@ -1,5 +1,4 @@
 program hydro
-#include "header.h"
 #include "param.h"
 
   use sim_data
@@ -82,7 +81,6 @@ program hydro
 #endif 
     ! do a SSP RK2 step
     call RK2_SSP(dt, solnVar(:,:,:))
-    print *, "rk done"
     ! apply BC
     call applyBC_all(solnVar(:,:,:))
 

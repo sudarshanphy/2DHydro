@@ -1,6 +1,4 @@
 module sim_data
-#include "header.h"
-
   implicit none
   real, save :: xmin, xmax, ymin, ymax, dx, dy
   real, save :: t0, tf, dt, out_dt

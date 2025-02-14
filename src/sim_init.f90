@@ -1,5 +1,4 @@
 module sim_init
-#include "header.h"
 #include "param.h"
   implicit none
 contains
@@ -10,7 +9,7 @@ contains
                         jlo, PI, grav, usegrav, gamma
 
     use misc_module, only: to_upper
-    use eos_module, only: eos_gete
+    use eos_module, only: eos_gete, eos_getp
     implicit none
     real, dimension(nx), intent(in) :: x
     real, dimension(ny), intent(in) :: y
@@ -40,12 +39,12 @@ contains
            if (sqrt(x(iInt)**2 + y(jInt)**2) <= 0.1) then
              solnVar(i,j,PRES_VAR) = 1.0e1
            end if
-           solnVar(i,j,ENER_VAR) = eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
+           call eos_gete(solnVar(i,j,:))
         end do
       end do
     
     case ("CONSTANT")
-      print *, "Sedov problem selected"
+      print *, "Constant problem selected"
       do j = jlo, jhi
         do i = ilo, ihi
            ! shift to interior index
@@ -58,11 +57,8 @@ contains
            solnVar(i,j, VELY_VAR) = 0.0e0
            solnVar(i,j, PRES_VAR) = 1.0e0
 
-           ! add a region with very high pressure
-           !if (sqrt(x(iInt)**2 + y(jInt)**2) <= 0.1) then
-           !  solnVar(i,j,PRES_VAR) = 1.0e1
-           !end if
-           solnVar(i,j,ENER_VAR) = eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
+           !solnVar(i,j,ENER_VAR) = eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END))
+           call eos_gete(solnVar(i,j,:))
         end do
       end do
 
@@ -93,7 +89,7 @@ contains
            if (abs(y(jInt) - 0.75) < 0.1) then
               solnVar(i,j, VELY_VAR) = 0.05 * sin(2.0 * 2.0 * PI * x(iInt))
            end if
-           solnVar(i,j,ENER_VAR) = eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
+           call eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
         end do
       end do
 
@@ -111,33 +107,22 @@ contains
 
            ! initialize the fields
            if (y(jInt) > 0.0) then
-             dens(i,j) = 2.0e0
-             velx(i,j) = -0.0e0
-             vely(i,j) = 0.0e0
-             pres(i,j) = 2.5e0 + grav * dens(i,j) * y(jInt)
+             solnVar(i,j, DENS_VAR) = 2.0e0
+             solnVar(i,j, VELX_VAR) = -0.0e0
+             solnVar(i,j, VELY_VAR) = 0.0e0
+             solnVar(i,j, PRES_VAR) = 2.5e0 + grav * solnVar(i,j, DENS_VAR) * y(jInt)
            else
-             dens(i,j) = 1.0e0
-             velx(i,j) = 0.0e0
-             vely(i,j) = 0.0e0
-             pres(i,j) = 2.5e0 + grav * dens(i,j) * y(jInt)
+             solnVar(i,j, DENS_VAR) = 1.0e0
+             solnVar(i,j, VELX_VAR) = 0.0e0
+             solnVar(i,j, VELY_VAR) = 0.0e0
+             solnVar(i,j, PRES_VAR) = 2.5e0 + grav * solnVar(i,j, DENS_VAR) * y(jInt)
            end if
-#ifdef MHD
-           bmfx(i,j) = 0.0e0
-           bmfy(i,j) = 0.0e0
-           bpsi(i,j) = 0.0e0
-#endif 
+
            ! give velocity perturbation at the interface
-           !if (abs(y(jInt)) < 0.1) then
-              !vely(i,j) = 0.05 * sin(2.0 * 2.0 * PI * x(iInt))
-              vely(i,j) = 0.01 * (1.0 + cos(4.0 * PI * x(iInt))) &
+           solnVar(i,j,VELY_VAR) = 0.01 * (1.0 + cos(4.0 * PI * x(iInt))) &
                                * (1.0 + cos(3.0 * PI * y(jInt))) / 4.0
-           !end if
-#ifdef MHD
-           ener(i,j) = eos_gete((/dens(i,j), velx(i,j), vely(i,j), 0.0, pres(i,j), &
-                                  bmfx(i,j), bmfy(i,j), 0.0/)) 
-#else
-           ener(i,j) = eos_gete((/dens(i,j), velx(i,j), vely(i,j), 0.0, pres(i,j)/)) 
-#endif
+                             
+           call eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
         end do
       end do
 
@@ -151,37 +136,27 @@ contains
 
            ! initialize the fields
            if ((x(iInt) <= 0.8) .and. (y(jInt) <= 0.8)) then
-             dens(i,j) = 0.138e0
-             velx(i,j) = 1.206e0
-             vely(i,j) = 1.206e0
-             pres(i,j) = 0.029e0
+             solnVar(i,j, DENS_VAR) = 0.138e0
+             solnVar(i,j, VELX_VAR) = 1.206e0
+             solnVar(i,j, VELY_VAR) = 1.206e0
+             solnVar(i,j, PRES_VAR) = 0.029e0
            else if ((x(iInt) <= 0.8) .and. (y(jInt) > 0.8)) then
-             dens(i,j) = 0.5323e0
-             velx(i,j) = 1.206e0
-             vely(i,j) = 0.0e0
-             pres(i,j) = 0.3e0
+             solnVar(i,j, DENS_VAR) = 0.5323e0
+             solnVar(i,j, VELX_VAR) = 1.206e0
+             solnVar(i,j, VELY_VAR) = 0.0e0
+             solnVar(i,j, PRES_VAR) = 0.3e0
            else if ((x(iInt) > 0.8) .and. (y(jInt) <= 0.8)) then
-             dens(i,j) = 0.5323e0
-             velx(i,j) = 0.0e0
-             vely(i,j) = 1.206e0
-             pres(i,j) = 0.3e0
+             solnVar(i,j, DENS_VAR) = 0.5323e0
+             solnVar(i,j, VELX_VAR) = 0.0e0
+             solnVar(i,j, VELY_VAR) = 1.206e0
+             solnVar(i,j, PRES_VAR) = 0.3e0
            else
-             dens(i,j) = 1.5e0
-             velx(i,j) = 0.0e0
-             vely(i,j) = 0.0e0
-             pres(i,j) = 1.5e0
+             solnVar(i,j, DENS_VAR) = 1.5e0
+             solnVar(i,j, VELX_VAR) = 0.0e0
+             solnVar(i,j, VELY_VAR) = 0.0e0
+             solnVar(i,j, PRES_VAR) = 1.5e0
            end if
-#ifdef MHD
-           bmfx(i,j) = 0.0e0
-           bmfy(i,j) = 0.0e0
-           bpsi(i,j) = 0.0e0
-#endif 
-#ifdef MHD
-           ener(i,j) = eos_gete((/dens(i,j), velx(i,j), vely(i,j), 0.0, pres(i,j), &
-                                  bmfx(i,j), bmfy(i,j), 0.0/)) 
-#else
-           ener(i,j) = eos_gete((/dens(i,j), velx(i,j), vely(i,j), 0.0, pres(i,j)/)) 
-#endif
+           call eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
         end do
       end do
 
@@ -192,21 +167,15 @@ contains
            ! shift to interior index
            iInt = i - Gpts
            jInt = j - Gpts
-           dens(i,j) = gamma**2
-           pres(i,j) = gamma
-           velx(i,j) = -sin(y(j))
-           vely(i,j) = sin(x(i))
+           solnVar(i,j, DENS_VAR) = gamma**2
+           solnVar(i,j, VELX_VAR) = gamma
+           solnVar(i,j, VELY_VAR) = -sin(y(j))
+           solnVar(i,j, PRES_VAR) = sin(x(i))
 #ifdef MHD
-           bmfx(i,j) = -sin(y(j))
-           bmfy(i,j) = sin(2.0*x(i))
-           bpsi(i,j) = 0.0e0
+           solnVar(i,j, BMFX_VAR) = -sin(y(j))
+           solnVar(i,j, BMFY_VAR) = sin(2.0*x(i))
 #endif 
-#ifdef MHD
-           ener(i,j) = eos_gete((/dens(i,j), velx(i,j), vely(i,j), 0.0, pres(i,j), &
-                                  bmfx(i,j), bmfy(i,j), 0.0/)) 
-#else
-           ener(i,j) = eos_gete((/dens(i,j), velx(i,j), vely(i,j), 0.0, pres(i,j)/)) 
-#endif
+           call eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
         end do
       end do
 
@@ -222,33 +191,30 @@ contains
            jInt = j - Gpts
            r = sqrt((x(iInt) - 0.5)**2 + (y(jInt) - 0.5)**2)
            if (r < 0.1) then
-             dens(i,j) = 10.0
-             velx(i,j) = 10.0 * (0.5 - y(jInt)) 
-             vely(i,j) = 10.0 * (x(iInt) - 0.5)
+             solnVar(i,j, DENS_VAR) = 10.0
+             solnVar(i,j, VELX_VAR) = 10.0 * (0.5 - y(jInt)) 
+             solnVar(i,j, VELY_VAR) = 10.0 * (x(iInt) - 0.5)
            else if (r > 0.115) then
-             dens(i,j) = 1.0
-             velx(i,j) = 0.0
-             vely(i,j) = 0.0
+             solnVar(i,j, DENS_VAR) = 1.0
+             solnVar(i,j, VELX_VAR) = 0.0
+             solnVar(i,j, VELY_VAR) = 0.0
            else
-             dens(i,j) = 1.0 + 9.0 * (0.115 - r)/(r - 0.1)
-             velx(i,j) =  100.0 * (0.115 - r)/(r - 0.1) * (0.5 - y(jInt)) / dens(i,j)
-             vely(i,j) =  100.0 * (0.115 - r)/(r - 0.1) * (x(iInt) - 0.5) / dens(i,j)
+             solnVar(i,j, DENS_VAR) = 1.0 + 9.0 * (0.115 - r)/(r - 0.1)
+             solnVar(i,j, VELX_VAR) =  100.0 * (0.115 - r)/(r - 0.1) * (0.5 - y(jInt)) &
+                                       / solnVar(i,j, DENS_VAR)
+             solnVar(i,j, VELY_VAR) =  100.0 * (0.115 - r)/(r - 0.1) * (x(iInt) - 0.5) &
+                                       / solnVar(i,j, DENS_VAR)
              ! need this to make sure density doen't blow up at initialization
-             dens(i,j) = min(dens(i,j), 10.0)
+             solnVar(i,j,DENS_VAR) = min(solnVar(i,j,DENS_VAR), 10.0)
            end if
-           pres(i,j) = 0.5
-           bmfx(i,j) = 2.5 / sqrt(4.0 * PI)
-           bmfy(i,j) = 0.0
-           bpsi(i,j) = 0.0e0
+           solnVar(i,j, PRES_VAR) = 0.5
 #ifdef MHD
-           ener(i,j) = eos_gete((/dens(i,j), velx(i,j), vely(i,j), 0.0, pres(i,j), &
-                                  bmfx(i,j), bmfy(i,j), 0.0/)) 
-#else
-           ener(i,j) = eos_gete((/dens(i,j), velx(i,j), vely(i,j), 0.0, pres(i,j)/)) 
+           solnVar(i,j, BMFX_VAR) = 2.5 / sqrt(4.0 * PI)
+           solnVar(i,j, BMFY_VAR) = 0.0
 #endif
+           call eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
         end do
       end do
-
     case default
       print *, "such problem not defined"
     end select    

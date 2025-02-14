@@ -1,5 +1,4 @@
 module rk2_module
-#include "header.h"     
 #include "param.h"
   implicit none
 contains
@@ -22,10 +21,10 @@ contains
        real(8), intent(in) :: dt
 
        real(8), dimension(xTpts, yTpts, NCONSVAR_NUMBER) :: U, Up1
-       real(8), dimension(xTpts, yTpts, NVAR_NUMBER) :: x_plus, x_minus, y_plus, y_minus
+       real(8), dimension(xTpts, yTpts, NCONSVAR_NUMBER) :: x_plus, x_minus, y_plus, y_minus
    
        real(8), dimension(xTpts, yTpts, NCONSVAR_NUMBER) :: xF, yF
-       real(8), dimension(NVAR_NUMBER-1) :: Uleft, Uright, Vleft, Vright
+       real(8), dimension(NCONSVAR_NUMBER) :: Uleft, Uright, Vleft, Vright
        real(8), dimension(NCONSVAR_NUMBER) :: sgrav, sterm
 
        integer :: i, j, k, l, m, n
@@ -46,16 +45,20 @@ contains
 
        do j = 1, yTpts
          do i = 1, xTpts
+           Up1(i,j,DENS_CONS) = solnVar(i,j,DENS_VAR) 
+           Up1(i,j,MOMX_CONS:MOMZ_CONS) = solnVar(i,j,DENS_VAR) * solnVar(i,j,VELX_VAR:VELZ_VAR)
+           Up1(i,j,ENER_CONS) = solnVar(i,j,ENER_VAR)
+
+#ifdef MHD
+           Up1(i,j,BMFX_CONS:BMFZ_CONS) = solnVar(i,j,BMFX_VAR:BMFZ_VAR)
+           Up1(i,j,BPSI_CONS) = solnVar(i,j,BPSI_VAR)
+#endif
            U(i,j,DENS_CONS) = solnVar(i,j,DENS_VAR) 
-           U(i,j,MOMX_CONS) = solnVar(i,j,DENS_VAR) * solnVar(i,j,VELX_VAR)
-           U(i,j,MOMY_CONS) = solnVar(i,j,DENS_VAR) * solnVar(i,j,VELY_VAR)
-           U(i,j,MOMZ_CONS) = solnVar(i,j,DENS_VAR) * solnVar(i,j,VELZ_VAR)
+           U(i,j,MOMX_CONS:MOMZ_CONS) = solnVar(i,j,DENS_VAR) * solnVar(i,j,VELX_VAR:VELZ_VAR)
            U(i,j,ENER_CONS) = solnVar(i,j,ENER_VAR)
 
 #ifdef MHD
-           U(i,j,BMFX_CONS) = solnVar(i,j,BMFX_VAR)
-           U(i,j,BMFY_CONS) = solnVar(i,j,BMFY_VAR)
-           U(i,j,BMFZ_CONS) = solnVar(i,j,BMFZ_VAR)
+           U(i,j,BMFX_CONS:BMFZ_CONS) = solnVar(i,j,BMFX_VAR:BMFZ_VAR)
            U(i,j,BPSI_CONS) = solnVar(i,j,BPSI_VAR)
 #endif
          end do
@@ -67,19 +70,14 @@ contains
          call recon_getcellfaces(dt, solnVar, &
                                  x_plus, x_minus, y_plus, y_minus)
 
-          ! initialize them to 0
-          xF(:,:,:) = 0.0
-          yF(:,:,:) = 0.0
-
           do j=jlo, jhi + 1
             do i = ilo, ihi + 1
 
-               do n = 1, NVAR_NUMBER - 1
+               do n = 1, NCONSVAR_NUMBER
                  Uleft(n) = x_plus(i-1,j,n)
                  Uright(n) = x_minus(i,j,n)
                  Vleft(n) = y_plus(i,j-1,n)
                  Vright(n) = y_minus(i,j,n)
-
                end do
 
               if (to_upper(trim(flux_solver)) == "HLLC") then
@@ -114,44 +112,42 @@ contains
 
           do j=jlo, jhi
             do i = ilo, ihi
-               do n = 1, NCONSVAR_NUMBER
-                  !sgrav = sterm * (/1.0e0, dens(i,j), dens(i,j), 0.0, momy(i,j),0.0,0.0,0.0,0.0/)
-                  Up1(i,j,n) = U(i,j,n) &
-                               + (dt/dx) * (xF(i,j,n) - xF(i+1,j,n)) &
-                               + (dt/dy) * (yF(i,j,n) - yF(i,j+1,n))
-               end do
-!
+               sgrav = sterm * (/1.0e0, dens(i,j), dens(i,j), 0.0, momy(i,j),0.0,0.0,0.0,0.0/)
+               Up1(i,j,:) = Up1(i,j,:) &
+                            + (dt/dx) * (xF(i,j,:) - xF(i+1,j,:)) &
+                            + (dt/dy) * (yF(i,j,:) - yF(i,j+1,:)) &
+                            + dt * sgrav(:)
+
+               ! get primitive quantities
                solnVar(i,j,DENS_VAR) = Up1(i,j,DENS_CONS)
-               solnVar(i,j,VELX_VAR) = Up1(i,j,MOMX_CONS)/Up1(i,j,DENS_CONS)
-               solnVar(i,j,VELY_VAR) = Up1(i,j,MOMY_CONS)/Up1(i,j,DENS_CONS)
+               solnVar(i,j,VELX_VAR:VELZ_VAR) = Up1(i,j,MOMX_CONS:MOMZ_CONS)/Up1(i,j,DENS_CONS)
                solnVar(i,j,ENER_VAR) = Up1(i,j,ENER_CONS)
 #ifdef MHD                        
-               solnVar(i,j,BMFX_VAR) = Up1(i,j,BMFX_CONS) 
-               solnVar(i,j,BMFY_VAR) = Up1(i,j,BMFY_CONS)
-               solnVar(i,j,BPSI_VAR) = Up1(i,j,BMFZ_CONS)
+               solnVar(i,j,BMFX_VAR:BMFZ_VAR) = Up1(i,j,BMFX_CONS:BMFZ_CONS) 
+               solnVar(i,j,BPSI_VAR) = Up1(i,j,BPSI_CONS)
 #endif
-               solnVar(i,j,PRES_VAR) = eos_getp(solnVar(i,j,:)) 
+               call eos_getp(solnVar(i,j,:))
             end do
           end do
+
           call applyBC_all(solnVar)
-       end do
+
+       end do ! rk step loop
 
        do j=jlo, jhi
          do i = ilo, ihi
-           do n = 1, NCONSVAR_NUMBER
-              Up1(i,j,n) = 0.5e0 * (U(i,j,n) + Up1(i,j,n))
-           end do
+           Up1(i,j,:) = 0.5e0 * (U(i,j,:) + Up1(i,j,:))
+
            ! get primitive quantities
            solnVar(i,j,DENS_VAR) = Up1(i,j,DENS_CONS)
-           solnVar(i,j,VELX_VAR) = Up1(i,j,MOMX_CONS)/Up1(i,j,DENS_CONS)
-           solnVar(i,j,VELY_VAR) = Up1(i,j,MOMY_CONS)/Up1(i,j,DENS_CONS)
+           solnVar(i,j,VELX_VAR:VELZ_VAR) = Up1(i,j,MOMX_CONS:MOMZ_CONS)/Up1(i,j,DENS_CONS)
            solnVar(i,j,ENER_VAR) = Up1(i,j,ENER_CONS)
 #ifdef MHD                    
-           solnVar(i,j,BMFX_VAR) = Up1(i,j,BMFX_CONS) 
-           solnVar(i,j,BMFY_VAR) = Up1(i,j,BMFY_CONS)
-           solnVar(i,j,BPSI_VAR) = Up1(i,j,BMFZ_CONS)
+           solnVar(i,j,BMFX_VAR:BMFZ_VAR) = Up1(i,j,BMFX_CONS:BMFZ_CONS) 
+           solnVar(i,j,BPSI_VAR) = Up1(i,j,BPSI_CONS)
 #endif
-           solnVar(i,j,PRES_VAR) = eos_getp(solnVar(i,j,:)) 
+           call eos_getp(solnVar(i,j,:))
+
          end do
        end do
        

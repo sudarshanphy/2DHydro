@@ -1,5 +1,5 @@
 module riemann_module
-#include "header.h"
+#include "param.h"
     implicit none
 
     ! HLLC solver is only for pure hydro simulation
@@ -10,14 +10,13 @@ contains
 #ifndef MHD
     subroutine hllc(Uleft, Uright, Dir, Flux)
         use sim_data, only: gamma
-        use eos_module, only: eos_gete
         use misc_module, only: to_upper 
         implicit none
 
-        real(8), dimension(5), intent(in) :: Uleft, Uright
+        real(8), dimension(1:NCONSVAR_NUMBER), intent(in) :: Uleft, Uright
         character(len=1), intent(in) :: Dir
-        real(8), dimension(5), intent(out) :: Flux
-        real(8), dimension(5) :: FL, FR, UL, UR, FstarL, FstarR, UstarL, UstarR
+        real(8), dimension(1:NCONSVAR_NUMBER), intent(out) :: Flux
+        real(8), dimension(1:NCONSVAR_NUMBER) :: FL, FR, UL, UR, FstarL, FstarR, UstarL, UstarR
         real(8) :: dL, udL, vdL, wdL, pL
         real(8) :: dR, udR, vdR, wdR, pR
         real(8) :: sdR, sdL, ufL, ufR, vfL, vfR, wfL, wfR
@@ -65,8 +64,8 @@ contains
         wdL = wfL * dL
         wdR = wfR * dR
 
-        eL =  eos_gete((/Uleft(1:5),0.0/))
-        eR =  eos_gete((/Uright(1:5),0.0/))
+        eL = eos_gete((/dL, ufL, vfL, wfL, pL/))
+        eR = eos_gete((/dR, ufR, vfR, wfR, pR/))
 
         HL = (eL + pL) / dL
         HR = (eR + pR) / dR
@@ -148,20 +147,13 @@ contains
 #ifdef MHD
         use sim_data, only: ch
 #endif
-        use eos_module, only: eos_gete
         use misc_module, only: to_upper 
         implicit none
 
         character(len=1), intent(in) :: Dir
-#ifdef MHD
-        real(8), dimension(9), intent(in) :: Uleft, Uright
-        real(8), dimension(9), intent(out) :: Flux
-        real(8), dimension(9) :: FL, FR, UL, UR, Fstar
-#else
-        real(8), dimension(5), intent(in) :: Uleft, Uright
-        real(8), dimension(5), intent(out) :: Flux
-        real(8), dimension(5) :: FL, FR, UL, UR, Fstar
-#endif
+        real(8), dimension(1:NCONSVAR_NUMBER), intent(in) :: Uleft, Uright
+        real(8), dimension(1:NCONSVAR_NUMBER), intent(out) :: Flux
+        real(8), dimension(1:NCONSVAR_NUMBER) :: FL, FR, UL, UR, Fstar
         real(8) :: dL, udL, vdL, wdL, pL, bxL, byL, bzL, bpL
         real(8) :: dR, udR, vdR, wdR, pR, bxR, byR, bzR, bpR
         real(8) :: sdR, sdL, ufL, ufR, vfL, vfR, wfL, wfR
@@ -225,11 +217,11 @@ contains
         qR = Uright(imn)
 
 #ifdef MHD
-        eL =  eos_gete((/Uleft(1:8),0.0/))
-        eR =  eos_gete((/Uright(1:8),0.0/))
+        eL =  eos_gete(Uleft(1:9))
+        eR =  eos_gete(Uright(1:9))
 #else
-        eL =  eos_gete((/Uleft(1:5),0.0/))
-        eR =  eos_gete((/Uright(1:5),0.0/))
+        eL =  eos_gete(Uleft(1:5))
+        eR =  eos_gete(Uright(1:5))
 #endif
 
 #ifndef MHD
@@ -330,14 +322,13 @@ contains
 #ifdef MHD
     subroutine hlld(VL, VR, Dir, Flux)
         use sim_data, only: gamma, ch
-        use eos_module, only: eos_gete
         use misc_module, only: to_upper 
         implicit none
 
-        real(8), dimension(9), intent(in) :: VL, VR
+        real(8), dimension(1:NCONSVAR_NUMBER), intent(in) :: VL, VR
         character(len=1), intent(in) :: Dir
-        real(8), dimension(9), intent(out) :: Flux
-        real(8), dimension(9) :: FL, FR, UL, UR, UL1, U2, UR1, Uhll
+        real(8), dimension(1:NCONSVAR_NUMBER), intent(out) :: Flux
+        real(8), dimension(1:NCONSVAR_NUMBER) :: FL, FR, UL, UR, UL1, U2, UR1, Uhll
         real(8) :: dL, udL, vdL, wdL, pL, bxL, byL, bzL, bpL
         real(8) :: dR, udR, vdR, wdR, pR, bxR, byR, bzR, bpR
         real(8) :: sdR, sdL, ufL, ufR, vfL, vfR, wfL, wfR
@@ -398,8 +389,8 @@ contains
         wdL = wfL * dL
         wdR = wfR * dR
 
-        eL =  eos_gete(VL(1:8))
-        eR =  eos_gete(VR(1:8))
+        eL =  eos_gete(VL(1:9))
+        eR =  eos_gete(VR(1:9))
 
         qL = VL(imn) 
         qR = VR(imn)
@@ -625,6 +616,28 @@ contains
     end subroutine hlld
 #endif
 
+    function eos_gete(U) result(ef)
+        ! EOS implementation for the riemann solver
+        use sim_data, only: gamma
+        implicit none
+        real, dimension(NCONSVAR_NUMBER) :: U
+        real :: ef
+        real :: df, uf, vf, wf, pf, bxf, byf, bzf
+
+        df = U(DENS_VAR)
+        uf = U(VELX_VAR)
+        vf = U(VELY_VAR)
+        wf = U(VELZ_VAR)
+        pf = U(PRES_VAR)
+        bxf = 0.0; byf = 0.0; bzf = 0.0
+#ifdef MHD
+        bxf = U(BMFX_VAR)
+        byf = U(BMFY_VAR)
+        bzf = U(BMFZ_VAR)
+#endif
+        ef = pf/(gamma - 1.0) + 0.5 * (df * (uf**2 + vf**2 + wf**2) + &
+                                         (bxf**2 + byf**2 + bzf**2))
+    end function eos_gete
 
 end module riemann_module
 

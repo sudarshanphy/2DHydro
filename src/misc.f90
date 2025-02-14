@@ -1,5 +1,4 @@
 module misc_module
-#include "header.h"
 #include "param.h"
   implicit none
 contains
@@ -44,13 +43,19 @@ contains
       do j = 1, yTpts
         do i = 1, xTpts
            cs = sqrt(gamma * solnVar(i,j,PRES_VAR) / solnVar(i,j,DENS_VAR))
+
+           if (cs < 0.0) then
+             print *, "Imaginary sound speed!"
+             print *, "At i,j, with gamma, pres, dens = ", i, j, gamma, &
+                           solnVar(i,j,PRES_VAR), solnVar(i,j,DENS_VAR)
+           endif
            xcmax = cs
            ycmax = cs
 #ifdef MHD
            cax = solnVar(i,j,BMFX_VAR) / sqrt(solnVar(i,j,DENS_VAR))
            cay = solnVar(i,j,BMFY_VAR) / sqrt(solnVar(i,j,DENS_VAR))
-           B2 =  dot_product(solnVar(i,j,BMFX_VAR:BMFZ_VAR),solnVar(i,j,BMFX_VAR:BMFZ_VAR))
-           cB2 = B2 / dens(i,j)
+           B2 =  sum(solnVar(i,j,BMFX_VAR:BMFZ_VAR)*solnVar(i,j,BMFX_VAR:BMFZ_VAR))
+           cB2 = B2 / solnVar(i,j,DENS_VAR)
            cfx = sqrt(0.5 * ((cs + cB2) + sqrt((cs + cB2)**2 - 4.0 * cs * cax * cax)))
            cfy = sqrt(0.5 * ((cs + cB2) + sqrt((cs + cB2)**2 - 4.0 * cs * cay * cay)))
            xcmax = cfx

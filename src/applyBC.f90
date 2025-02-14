@@ -1,5 +1,4 @@
 module applyBC_module
-#include "header.h"
 #include "param.h"
   implicit none
 contains
