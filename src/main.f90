@@ -1,5 +1,6 @@
 program hydro
 #include "header.h"
+#include "param.h"
 
   use sim_data
   use sim_init, only: init_problem
@@ -12,11 +13,7 @@ program hydro
   implicit none
 
   real, allocatable, dimension(:) :: xval, yval
-  real, allocatable, dimension(:, :) :: dens, velx, vely, pres, ener
-
-#ifdef MHD
-  real, allocatable, dimension(:, :) :: bmfx, bmfy, bpsi
-#endif   
+  real, allocatable, dimension(:, :, :) :: solnVar
 
   real :: time, dtime, timeio
   integer ::  step, outputno
@@ -32,12 +29,7 @@ program hydro
   call grid_init(xval, yval)
 
   !allocate the fields
-  allocate(dens(xTpts, yTpts), velx(xTpts, yTpts), &
-           vely(xTpts, yTpts), pres(xTpts, yTpts), ener(xTpts, yTpts))
-#ifdef MHD  
-  allocate(bmfx(xTpts, yTpts), bmfy(xTpts, yTpts), &
-           bpsi(xTpts, yTpts))
-#endif
+  allocate(solnVar(xTpts, yTpts, NVAR_NUMBER))
 
   ! check if it is a restart or not
   if (.not. restart) then
@@ -45,52 +37,23 @@ program hydro
     outputno = 0
 
     !initialize the problem
-#ifdef MHD
-    call init_problem(xval, yval, dens, velx, vely, pres, ener, &
-                                              bmfx, bmfy, bpsi )
-#else
-    call init_problem(xval, yval, dens, velx, vely, pres, ener)
-#endif
+    call init_problem(xval, yval, solnVar(:,:,:))
                                              
-    call write_output(t0, step, xval, yval, &
-                      dens(ilo:ihi, jlo:jhi), velx(ilo:ihi, jlo:jhi), &
-                      vely(ilo:ihi, jlo:jhi), pres(ilo:ihi, jlo:jhi), &
-                      ener(ilo:ihi, jlo:jhi), &
-#ifdef MHD
-                      bmfx(ilo:ihi, jlo:jhi), bmfy(ilo:ihi, jlo:jhi), &
-                      bpsi(ilo:ihi, jlo:jhi), &
-#endif
+    call write_output(t0, step, xval, yval, solnVar(ilo:ihi, jlo:jhi, :), &
                       outputno) 
 
   else
 
     ! restart a problem from an output file
-#ifdef MHD
-    call restart_problem(restart_no, t0, dens, velx, vely, pres, ener, &
-                                                     bmfx, bmfy, bpsi )
-#else
-    call restart_problem(restart_no, t0, dens, velx, vely, pres, ener)
-#endif
-
+    call restart_problem(restart_no, t0, solnVar)
     step = restart_step
     outputno = restart_no
-    call write_output(t0, step, xval, yval, &
-                      dens(ilo:ihi, jlo:jhi), velx(ilo:ihi, jlo:jhi), &
-                      vely(ilo:ihi, jlo:jhi), pres(ilo:ihi, jlo:jhi), &
-                      ener(ilo:ihi, jlo:jhi),                         &
-#ifdef MHD
-                      bmfx(ilo:ihi, jlo:jhi), bmfy(ilo:ihi, jlo:jhi), &
-                      bpsi(ilo:ihi, jlo:jhi), &
-#endif
+    call write_output(t0, step, xval, yval, solnVar(ilo:ihi, jlo:jhi, :), &
                       outputno, .true.) 
 
   end if
 
-#ifdef MHD
-  call applyBC_all(dens, velx, vely, pres, ener, bmfx, bmfy, bpsi)
-#else
-  call applyBC_all(dens, velx, vely, pres, ener)
-#endif  
+  call applyBC_all(solnVar)
    
   time = t0
   timeio = time + out_dt
@@ -100,11 +63,7 @@ program hydro
     io_output = .false.
     
     ! compute dt
-#ifdef MHD
-    dt = get_dt(dens, velx, vely, pres, bmfx, bmfy)
-#else    
-    dt = get_dt(dens, velx, vely, pres) 
-#endif
+    dt = get_dt(solnVar(:,:,:))
 
     if (time + dt > tf) then
       dt = tf - time
@@ -120,42 +79,28 @@ program hydro
 
 #ifdef MHD
     ! glm update psi 
-    call glm(bpsi, dt)
-    ! do a SSP RK2 step
-    call RK2_SSP(dt, dens, velx, vely, pres, ener, bmfx, bmfy, bpsi)
-    ! apply BC
-    call applyBC_all(dens, velx, vely, pres, ener, bmfx, bmfy, bpsi)
-#else
-    call RK2_SSP(dt, dens, velx, vely, pres, ener)
-    call applyBC_all(dens, velx, vely, pres, ener) 
+    call glm(solnVar(:,:,BPSI_VAR), dt)
 #endif 
+    ! do a SSP RK2 step
+    call RK2_SSP(dt, solnVar)
+    ! apply BC
+    call applyBC_all(solnVar)
 
     time = time + dt
     step = step + 1
 
     if (io_output) then
       outputno = outputno + 1
-      call write_output(time, step, xval, yval, &
-                        dens(ilo:ihi, jlo:jhi), velx(ilo:ihi, jlo:jhi), &
-                        vely(ilo:ihi, jlo:jhi), pres(ilo:ihi, jlo:jhi), &
-                        ener(ilo:ihi, jlo:jhi),                         & 
-#ifdef MHD
-                        bmfx(ilo:ihi, jlo:jhi), bmfy(ilo:ihi, jlo:jhi), &
-                        bpsi(ilo:ihi, jlo:jhi), &
-#endif
-                                                                  outputno)
+      call write_output(time, step, xval, yval, solnVar, outputno)
       print *, "$$$ Step: ", step," || time = ", time, " || output # = ", outputno," $$$" 
 
     end if
 #ifdef MHD
-    call glm(bpsi, dt)
+    call glm(solnVar(:,:,BPSI_VAR), dt)
 #endif
     print *, "Step: ", step," --> time = ", time , ", dt = ", dt
   end do
   
-  deallocate(dens, velx, vely, pres, ener)
-#ifdef MHD
-  deallocate(bmfx, bmfy, bpsi)
-#endif
+  deallocate(solnVar)
   deallocate(xval, yval)
 end program hydro

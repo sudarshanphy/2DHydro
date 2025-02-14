@@ -9,43 +9,49 @@ mpl.rcParams['font.serif'] = ['Times New Roman']
 mpl.rcParams['font.size'] = 20.0
 
 #num = int(sys.argv[1])
-num = 1
-fname = "./output/sedov_test_%04d.dat"%(num)
-fieldname = "pres"
-
-f = open(fname, "r")
-
-lines = f.readlines()
-
-f.close()
-
-time = float(lines[0].split()[2])
-step = float(lines[0].split()[-1])
-nx = int(lines[1].split()[2])
-dx = float(lines[1].split()[-1])
-ny = int(lines[2].split()[2])
-dy = float(lines[2].split()[-1])
-gamma = float(lines[3].split()[-1])
+num = 3
+fname = "./output/rotormhd_test_%04d.dat"%(num)
 
 
-fields = lines[4].split()
-for i,field in enumerate(fields):
-    if (field == fieldname.lower()):
-        index = i - 1
+def get_Bx_By(fname):
 
-print(index, fieldname)
+    f = open(fname, "r")
 
-#data = np.zeros((nx, ny))
-x_array = []
-y_array = []
-data = []
+    lines = f.readlines()
 
-for line in lines[5:]:
-    lst = line.split()
-    if (lst[0] != "####"):
-        x_array.append(float(lst[0]))
-        y_array.append(float(lst[1]))
-        data.append(float(lst[index]))
+    f.close()
+
+    time = float(lines[0].split()[2])
+    step = float(lines[0].split()[-1])
+    nx = int(lines[1].split()[2])
+    dx = float(lines[1].split()[-1])
+    ny = int(lines[2].split()[2])
+    dy = float(lines[2].split()[-1])
+    gamma = float(lines[3].split()[-1])
+
+    ibx = 7
+    iby = 8
+            
+    #data = np.zeros((nx, ny))
+    x_array = []
+    y_array = []
+    data_bx = []
+    data_by = []
+    
+    for line in lines[5:]:
+        lst = line.split()
+        if (lst[0] != "####"):
+            x_array.append(float(lst[0]))
+            y_array.append(float(lst[1]))
+            data_bx.append(float(lst[ibx]))
+            data_by.append(float(lst[iby]))
+            
+    for ii in range(1,len(x_array)-1):
+        divB = (data_bx[ii] - data_bx[ii-1])/
+
+        
+
+        
     
     
 x_array = np.array(x_array)

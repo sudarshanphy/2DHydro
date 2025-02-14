@@ -1,26 +1,24 @@
 module sim_init
 #include "header.h"
+#include "param.h"
   implicit none
 contains
-  subroutine init_problem(x, y, dens, velx, vely, pres, ener &
-#ifdef MHD
-                                    , bmfx, bmfy, bpsi       &
-#endif
-                                                             &)
+  subroutine init_problem(x, y, solnVar)
+
     use sim_data, only: problem, xTpts, yTpts, &
                         nx, ny, Gpts, ihi, ilo, jhi, &
                         jlo, PI, grav, usegrav, gamma
+
     use misc_module, only: to_upper
     use eos_module, only: eos_gete
     implicit none
     real, dimension(nx), intent(in) :: x
     real, dimension(ny), intent(in) :: y
-    real, dimension(xTpts, yTpts), intent(inout) :: dens, velx, vely, pres, ener
-#ifdef MHD
-    real, dimension(xTpts, yTpts), intent(inout) :: bmfx, bmfy,  bpsi
-#endif
+    real, dimension(xTpts, yTpts, NVAR_NUMBER), intent(inout) :: solnVar
     integer :: i, j, iInt, jInt
     real :: r
+    
+    solnVar(:,:,:) = 0.0
 
     select case (to_upper(trim(problem)))
 
@@ -33,28 +31,19 @@ contains
            jInt = j - Gpts
 
            ! initialize the fields
-           dens(i,j) = 1.0e0
-           velx(i,j) = 0.0e0
-           vely(i,j) = 0.0e0
-           pres(i,j) = 1.0e-1
-#ifdef MHD
-           bmfx(i,j) = 0.0e0
-           bmfy(i,j) = 0.0e0
-           bpsi(i,j) = 0.0e0
-#endif 
+           solnVar(i,j, DENS_VAR) = 1.0e0
+           solnVar(i,j, VELX_VAR) = 0.0e0
+           solnVar(i,j, VELY_VAR) = 0.0e0
+           solnVar(i,j, PRES_VAR) = 1.0e-1
+
            ! add a region with very high pressure
            if (sqrt(x(iInt)**2 + y(jInt)**2) <= 0.1) then
-             pres(i,j) = 1.0e1
+             solnVar(i,j,PRES_VAR) = 1.0e1
            end if
-#ifdef MHD
-           ener(i,j) = eos_gete((/dens(i,j), velx(i,j), vely(i,j), 0.0, pres(i,j), &
-                                  bmfx(i,j), bmfy(i,j), 0.0/)) 
-#else
-           ener(i,j) = eos_gete((/dens(i,j), velx(i,j), vely(i,j), 0.0, pres(i,j)/)) 
-#endif
+           solnVar(i,j,ENER_VAR) = eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END-1)) 
         end do
       end do
-
+#if 0
     case ("KH")
       print *, "Kelvin-Helmholtz (KH) problem selected"
       do j = jlo, jhi
@@ -247,11 +236,11 @@ contains
 #endif
         end do
       end do
+#endif
 
     case default
       print *, "such problem not defined"
     end select    
-
      
   end subroutine init_problem
 end module sim_init

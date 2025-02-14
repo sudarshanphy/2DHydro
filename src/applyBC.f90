@@ -1,5 +1,6 @@
 module applyBC_module
 #include "header.h"
+#include "param.h"
   implicit none
 contains
 
@@ -72,37 +73,24 @@ contains
     end select
   end subroutine applyBC
   
-  subroutine applyBC_all(dens, velx, vely, pres, ener &
-#ifdef MHD
-                             , bmfx, bmfy, bpsi       &
-#endif
-                                                      &)
+  subroutine applyBC_all(solnVar)
     use sim_data, only: xTpts, yTpts
     implicit none
-    real, dimension(xTpts, yTpts), intent(inout) :: dens, velx, vely, pres, ener
-#ifdef MHD
-    real, dimension(xTpts, yTpts), intent(inout) :: bmfx, bmfy, bpsi
-#endif
-    call applyBC(dens, "x") 
-    call applyBC(velx, "x", .true.) 
-    call applyBC(vely, "x") 
-    call applyBC(pres, "x") 
-    call applyBC(ener, "x") 
-    
-    call applyBC(dens, "y") 
-    call applyBC(velx, "y") 
-    call applyBC(vely, "y", .true.) 
-    call applyBC(pres, "y") 
-    call applyBC(ener, "y")
+    real, dimension(xTpts, yTpts, NVAR_NUMBER), intent(inout) :: solnVar
+    integer :: n
 
-#ifdef MHD
-    call applyBC(bmfx, "x")
-    call applyBC(bmfx, "y")
-    call applyBC(bmfy, "x")
-    call applyBC(bmfy, "y")
-    call applyBC(bpsi, "x")
-    call applyBC(bpsi, "y")
-#endif
+    do n=NVAR_BEGIN, NVAR_END
+       if (n == VELX_VAR) then
+         call applyBC(solnVar(:,:,n), "x", .true.)
+         call applyBC(solnVar(:,:,n),"y")
+       else if (n == VELY_VAR) then
+         call applyBC(solnVar(:,:,n), "y", .true.)
+         call applyBC(solnVar(:,:,n),"x")
+       else
+         call applyBC(solnVar(:,:,n), "x")
+         call applyBC(solnVar(:,:,n), "y")
+      end if
+    end do
 
   end subroutine applyBC_all
 end module applyBC_module

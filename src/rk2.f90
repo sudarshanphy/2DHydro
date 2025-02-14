@@ -1,13 +1,10 @@
 module rk2_module
-#include "header.h"      
+#include "header.h"     
+#include "param.h"
   implicit none
 contains
 
-    subroutine RK2_SSP(dt, dens, velx, vely, pres, ener &
-#ifdef MHD
-                                     , bmfx, bmfy, bpsi &
-#endif
-                                                        &)
+    subroutine RK2_SSP(dt, solnVar)
 #ifndef MHD       
        use riemann_module, only: hllc,hlle
 #else
@@ -21,11 +18,9 @@ contains
        use applyBC_module, only: applyBC_all 
        use misc_module, only: to_upper
        implicit none
-       real(8), dimension(xTpts, yTpts), intent(inout) :: dens, velx, vely, pres, ener
-#ifdef MHD
-       real(8), dimension(xTpts, yTpts), intent(inout) :: bmfx, bmfy, bpsi
-#endif
-       real(8), intent(in) :: dt 
+       real(8), dimension(xTpts, yTpts, NVAR_NUMBER), intent(inout) :: solnVar
+       real(8), intent(in) :: dt
+       real(8), dimension(xTpts, yTpts) :: dens, pres, velx, vely, ener 
        real(8), dimension(xTpts, yTpts) :: momx, momy, dens_n, &
                                            momx_n, momy_n, ener_n
        real(8), dimension(xTpts, yTpts) :: xr_plus, xu_plus, xv_plus, xp_plus
@@ -33,6 +28,7 @@ contains
        real(8), dimension(xTpts, yTpts) :: yr_plus, yu_plus, yv_plus, yp_plus
        real(8), dimension(xTpts, yTpts) :: yr_minus, yu_minus, yv_minus, yp_minus
 #ifdef MHD
+       real(8), dimension(xTpts, yTpts) :: bmfx, bmfy, bpsi
        real(8), dimension(xTpts, yTpts) :: bmfx_n, bmfy_n, bpsi_n
        real(8), dimension(xTpts, yTpts) :: xbx_plus, xby_plus, xbx_minus, xby_minus, &
                                            xbp_plus, xbp_minus
@@ -68,7 +64,17 @@ contains
        else
          sterm(:) = 0.0e0
        end if
+       dens(:,:) = solnVar(:,:,DENS_VAR)
+       velx(:,:) = solnVar(:,:,VELX_VAR)
+       vely(:,:) = solnVar(:,:,VELY_VAR)
+       pres(:,:) = solnVar(:,:,PRES_VAR)
+       ener(:,:) = solnVar(:,:,ENER_VAR)
 
+#ifdef MHD
+       bmfx = solnVar(:,:,BMFX_VAR)
+       bmfy = solnVar(:,:,BMFY_VAR)
+       bpsi = solnVar(:,:,BPSI_VAR)
+#endif
        do j = 1, yTpts
          do i = 1, xTpts
              momx(i,j) = velx(i,j) * dens(i,j)
@@ -87,6 +93,18 @@ contains
       
        ! rk2 has 2 steps
        do k = 1, 2
+
+       dens(:,:) = solnVar(:,:,DENS_VAR)
+       velx(:,:) = solnVar(:,:,VELX_VAR)
+       vely(:,:) = solnVar(:,:,VELY_VAR)
+       pres(:,:) = solnVar(:,:,PRES_VAR)
+       ener(:,:) = solnVar(:,:,ENER_VAR)
+
+#ifdef MHD
+       bmfx = solnVar(:,:,BMFX_VAR)
+       bmfy = solnVar(:,:,BMFY_VAR)
+       bpsi = solnVar(:,:,BPSI_VAR)
+#endif
 
          call recon_getcellfaces(dt, dens, velx, vely, pres, &
 #ifdef MHD 
@@ -218,11 +236,18 @@ contains
 #endif
             end do
           end do
-#ifdef MHD         
-          call applyBC_all(dens, velx, vely, pres, ener, bmfx, bmfy, bpsi)
-#else
-          call applyBC_all(dens, velx, vely, pres, ener)
+          solnVar(:,:,DENS_VAR) = dens(:,:)
+          solnVar(:,:,VELX_VAR) = velx(:,:)
+          solnVar(:,:,VELY_VAR) = vely(:,:)
+          solnVar(:,:,PRES_VAR) = pres(:,:)
+          solnVar(:,:,ENER_VAR) = ener(:,:)
+                                      
+#ifdef MHD                        
+          solnVar(:,:,BMFX_VAR) = bmfx
+          solnVar(:,:,BMFY_VAR) = bmfy
+          solnVar(:,:,BPSI_VAR) = bpsi
 #endif
+          call applyBC_all(solnVar)
        end do
 
        do j=jlo, jhi
@@ -250,5 +275,15 @@ contains
          end do
        end do
        
+          solnVar(:,:,DENS_VAR) = dens(:,:)
+          solnVar(:,:,VELX_VAR) = velx(:,:)
+          solnVar(:,:,VELY_VAR) = vely(:,:)
+          solnVar(:,:,PRES_VAR) = pres(:,:)
+          solnVar(:,:,ENER_VAR) = ener(:,:)
+#ifdef MHD                        
+          solnVar(:,:,BMFX_VAR) = bmfx(i,:)
+          solnVar(:,:,BMFY_VAR) = bmfy(i,:)
+          solnVar(:,:,BPSI_VAR) = bpsi(i,:)
+#endif
     end subroutine RK2_SSP
 end module rk2_module

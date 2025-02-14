@@ -1,5 +1,6 @@
 module misc_module
 #include "header.h"
+#include "param.h"
   implicit none
 contains
 
@@ -24,20 +25,13 @@ contains
     
     end function to_upper
 
-    function get_dt(dens, velx, vely, pres &
-#ifdef MHD
-                        , bmfx, bmfy       &
-#endif
-                                           &) result(dt)
+    function get_dt(solnVar) result(dt)
       use sim_data, only: gamma, xTpts, yTpts, dx, dy, cfl
 #ifdef MHD
       use sim_data, only: ch
 #endif
       implicit none
-      real, dimension(xTpts, yTpts) :: dens, velx, vely, pres
-#ifdef MHD
-      real, dimension(xTpts, yTpts) :: bmfx, bmfy
-#endif
+      real, dimension(xTpts, yTpts, NVAR_NUMBER) :: solnVar
       real, dimension(xTpts, yTpts) :: xsmax, ysmax
       real :: cs, xcmax, ycmax   !sound speed
 #ifdef MHD  
@@ -49,21 +43,21 @@ contains
       
       do j = 1, yTpts
         do i = 1, xTpts
-           cs = sqrt(gamma * pres(i,j) / dens(i,j))
+           cs = sqrt(gamma * solnVar(i,j,PRES_VAR) / solnVar(i,j,DENS_VAR))
            xcmax = cs
            ycmax = cs
 #ifdef MHD
-           cax = bmfx(i,j) / sqrt(dens(i,j))
-           cay = bmfy(i,j) / sqrt(dens(i,j))
-           B2 = bmfx(i,j) * bmfx(i,j) + bmfy(i,j) * bmfy(i,j)
+           cax = solnVar(i,j,BMFX_VAR) / sqrt(solnVar(i,j,DENS_VAR))
+           cay = solnVar(i,j,BMFY_VAR) / sqrt(solnVar(i,j,DENS_VAR))
+           B2 =  dot_product(solnVar(i,j,BMFX_VAR:BMFZ_VAR),solnVar(i,j,BMFX_VAR:BMFZ_VAR))
            cB2 = B2 / dens(i,j)
            cfx = sqrt(0.5 * ((cs + cB2) + sqrt((cs + cB2)**2 - 4.0 * cs * cax * cax)))
            cfy = sqrt(0.5 * ((cs + cB2) + sqrt((cs + cB2)**2 - 4.0 * cs * cay * cay)))
            xcmax = cfx
            xcmax = cfy
 #endif
-           xsmax(i,j) = xcmax + abs(velx(i,j))
-           ysmax(i,j) = ycmax + abs(vely(i,j))
+           xsmax(i,j) = xcmax + abs(solnVar(i,j,VELX_VAR))
+           ysmax(i,j) = ycmax + abs(solnVar(i,j,VELY_VAR))
         end do
       end do
        
