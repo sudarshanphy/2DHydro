@@ -18,6 +18,9 @@ program hydro
   integer ::  step, outputno
   logical :: io_output
   
+  real :: timer_start, timer_stop, time_per_step, timer_step0, &
+          timer_step1
+
   !read the parameter file
   call read_par()
   
@@ -51,13 +54,16 @@ program hydro
                       outputno, .true.) 
 
   end if
-
+  
+  call CPU_TIME(timer_start)
+  timer_step0 = 0
   call applyBC_all(solnVar(:,:,:))
    
   time = t0
   timeio = time + out_dt
   ! evolution loop
   do while (time < tf)
+
     io_output = .false.
     
     ! compute dt
@@ -88,10 +94,22 @@ program hydro
     step = step + 1
 
     if (io_output) then
+
+      call CPU_TIME(timer_stop)
+      timer_step1 = step
+      time_per_step = (timer_stop - timer_start) &
+                     /(timer_step1 - timer_step0)
+
+      print *, "# step0 = ", timer_step0, " step1 = ", timer_step1
+      print *, "# time per step = ", time_per_step
+
+      timer_step0 = step
+
       outputno = outputno + 1
       call write_output(time, step, xval, yval, solnVar(ilo:ihi, jlo:jhi, :), outputno)
       print *, "$$$ Step: ", step," || time = ", time, " || output # = ", outputno," $$$" 
-
+    
+      call CPU_TIME(timer_start)
     end if
 #ifdef MHD
     call glm(solnVar(:,:,BPSI_VAR), dt)
