@@ -64,7 +64,7 @@ fig = plt.figure(figsize=(12,12)) # , layout='constrained')
 ax = plt.axes()
 #plt.title("2D Riemann problem (WENO5) at t= %8.3e"%(time))
 plt.pcolormesh(X, Y, np.transpose(data), cmap='jet', \
-               vmax=dmax, vmin=dmin) # \
+               vmax=1.0, vmin=dmin) # \
                #norm=mpl.colors.LogNorm(0.12,1.76))
 
 

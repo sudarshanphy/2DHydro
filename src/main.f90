@@ -45,7 +45,7 @@ program hydro
   else
 
     ! restart a problem from an output file
-    call restart_problem(restart_no, t0, solnVar)
+    call restart_problem(restart_no, t0, solnVar(:,:,:))
     step = restart_step
     outputno = restart_no
     call write_output(t0, step, xval, yval, solnVar(ilo:ihi, jlo:jhi, :), &
@@ -53,11 +53,12 @@ program hydro
 
   end if
 
-  call applyBC_all(solnVar)
+  !print *, solnVar(ilo,jlo,DENS_VAR), solnVar(ilo-1,jlo,DENS_VAR), solnVar(ilo,jlo-1, DENS_VAR) 
+  call applyBC_all(solnVar(:,:,:))
+  !print *, solnVar(ilo,jlo,DENS_VAR), solnVar(ilo-1,jlo,DENS_VAR), solnVar(ilo,jlo-1, DENS_VAR) 
    
   time = t0
   timeio = time + out_dt
-   
   ! evolution loop
   do while (time < tf)
     io_output = .false.
@@ -82,9 +83,9 @@ program hydro
     call glm(solnVar(:,:,BPSI_VAR), dt)
 #endif 
     ! do a SSP RK2 step
-    call RK2_SSP(dt, solnVar)
+    call RK2_SSP(dt, solnVar(:,:,:))
     ! apply BC
-    call applyBC_all(solnVar)
+    call applyBC_all(solnVar(:,:,:))
 
     time = time + dt
     step = step + 1

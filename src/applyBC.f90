@@ -79,7 +79,7 @@ contains
     real, dimension(xTpts, yTpts, NVAR_NUMBER), intent(inout) :: solnVar
     integer :: n
 
-    do n=NVAR_BEGIN, NVAR_END
+    do n=NVAR_BEGIN, NVAR_NUMBER
        if (n == VELX_VAR) then
          call applyBC(solnVar(:,:,n), "x", .true.)
          call applyBC(solnVar(:,:,n),"y")

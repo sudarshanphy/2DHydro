@@ -14,7 +14,7 @@ contains
     implicit none
     real, dimension(nx), intent(in) :: x
     real, dimension(ny), intent(in) :: y
-    real, dimension(xTpts, yTpts, NVAR_NUMBER), intent(inout) :: solnVar
+    real, dimension(xTpts, yTpts, NVAR_NUMBER), intent(out) :: solnVar
     integer :: i, j, iInt, jInt
     real :: r
     

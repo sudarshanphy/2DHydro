@@ -43,11 +43,7 @@ contains
        real(8), dimension(xTpts, yTpts) :: ybxF, ybyF, ybpF
 #endif
 
-#ifdef MHD
-       real(8), dimension(9) :: Uleft, Uright, Vleft, Vright, xF, yF
-#else
-       real(8), dimension(5) :: Uleft, Uright, Vleft, Vright, xF, yF
-#endif
+       real(8), dimension(NVAR_NUMBER-1) :: Uleft, Uright, Vleft, Vright, xF, yF
        real(8), dimension(4) :: sgrav, sterm
 
        integer :: i, j, k, l, m, n
@@ -64,19 +60,19 @@ contains
        else
          sterm(:) = 0.0e0
        end if
-       dens(:,:) = solnVar(:,:,DENS_VAR)
-       velx(:,:) = solnVar(:,:,VELX_VAR)
-       vely(:,:) = solnVar(:,:,VELY_VAR)
-       pres(:,:) = solnVar(:,:,PRES_VAR)
-       ener(:,:) = solnVar(:,:,ENER_VAR)
-
+       do j = 1, yTpts
+         do i = 1, xTpts
+         dens(i,j) = solnVar(i,j,DENS_VAR)
+         velx(i,j) = solnVar(i,j,VELX_VAR)
+         vely(i,j) = solnVar(i,j,VELY_VAR)
+         pres(i,j) = solnVar(i,j,PRES_VAR)
+         ener(i,j) = solnVar(i,j,ENER_VAR)
+   
 #ifdef MHD
        bmfx = solnVar(:,:,BMFX_VAR)
        bmfy = solnVar(:,:,BMFY_VAR)
        bpsi = solnVar(:,:,BPSI_VAR)
 #endif
-       do j = 1, yTpts
-         do i = 1, xTpts
              momx(i,j) = velx(i,j) * dens(i,j)
              momy(i,j) = vely(i,j) * dens(i,j)
              dens_n(i,j) = dens(i,j)
@@ -234,19 +230,19 @@ contains
 #else
                pres(i,j) = eos_getp((/dens(i,j), velx(i,j), vely(i,j), 0.0, ener(i,j)/))      
 #endif
-            end do
-          end do
-          solnVar(:,:,DENS_VAR) = dens(:,:)
-          solnVar(:,:,VELX_VAR) = velx(:,:)
-          solnVar(:,:,VELY_VAR) = vely(:,:)
-          solnVar(:,:,PRES_VAR) = pres(:,:)
-          solnVar(:,:,ENER_VAR) = ener(:,:)
+          solnVar(i,j,DENS_VAR) = dens(i,j)
+          solnVar(i,j,VELX_VAR) = velx(i,j)
+          solnVar(i,j,VELY_VAR) = vely(i,j)
+          solnVar(i,j,PRES_VAR) = pres(i,j)
+          solnVar(i,j,ENER_VAR) = ener(i,j)
                                       
 #ifdef MHD                        
-          solnVar(:,:,BMFX_VAR) = bmfx
-          solnVar(:,:,BMFY_VAR) = bmfy
-          solnVar(:,:,BPSI_VAR) = bpsi
+          solnVar(i,j,BMFX_VAR) = bmfx(i,j)
+          solnVar(i,j,BMFY_VAR) = bmfy(i,j)
+          solnVar(i,j,BPSI_VAR) = bpsi(i,j)
 #endif
+            end do
+          end do
           call applyBC_all(solnVar)
        end do
 
@@ -272,18 +268,18 @@ contains
            pres(i,j) = eos_getp((/dens(i,j), velx(i,j), vely(i,j), 0.0, ener(i,j)/))      
 #endif
 
+           solnVar(i,j,DENS_VAR) = dens(i,j)
+           solnVar(i,j,VELX_VAR) = velx(i,j)
+           solnVar(i,j,VELY_VAR) = vely(i,j)
+           solnVar(i,j,PRES_VAR) = pres(i,j)
+           solnVar(i,j,ENER_VAR) = ener(i,j)
+#ifdef MHD                     
+           solnVar(i,j,BMFX_VAR) = bmfx(i,j)
+           solnVar(i,j,BMFY_VAR) = bmfy(i,j)
+           solnVar(i,j,BPSI_VAR) = bpsi(i,j)
+#endif
          end do
        end do
        
-          solnVar(:,:,DENS_VAR) = dens(:,:)
-          solnVar(:,:,VELX_VAR) = velx(:,:)
-          solnVar(:,:,VELY_VAR) = vely(:,:)
-          solnVar(:,:,PRES_VAR) = pres(:,:)
-          solnVar(:,:,ENER_VAR) = ener(:,:)
-#ifdef MHD                        
-          solnVar(:,:,BMFX_VAR) = bmfx(i,:)
-          solnVar(:,:,BMFY_VAR) = bmfy(i,:)
-          solnVar(:,:,BPSI_VAR) = bpsi(i,:)
-#endif
     end subroutine RK2_SSP
 end module rk2_module

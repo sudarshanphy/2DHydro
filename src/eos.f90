@@ -7,7 +7,7 @@ contains
         use sim_data, only: gamma
         implicit none
 #ifdef MHD
-        real :: U(8)
+        real :: U(9)
 #else
         real :: U(5)
 #endif
@@ -35,7 +35,7 @@ contains
         use sim_data, only: gamma
         implicit none
 #ifdef MHD
-        real :: U(8)
+        real :: U(9)
 #else
         real :: U(5)
 #endif
