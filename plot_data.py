@@ -9,8 +9,8 @@ mpl.rcParams['font.serif'] = ['Times New Roman']
 mpl.rcParams['font.size'] = 20.0
 
 #num = int(sys.argv[1])
-num = 1
-fname = "./output/sedov_test_%04d.dat"%(num)
+num = 0
+fname = "./output/rotor_test_%04d.dat"%(num)
 fieldname = "pres"
 
 f = open(fname, "r")
@@ -68,7 +68,7 @@ fig = plt.figure(figsize=(12,12)) # , layout='constrained')
 ax = plt.axes()
 #plt.title("2D Riemann problem (WENO5) at t= %8.3e"%(time))
 plt.pcolormesh(X, Y, np.transpose(data), cmap='jet', \
-               vmax=1.0, vmin=dmin) # \
+               vmax=dmax, vmin=dmin) # \
                #norm=mpl.colors.LogNorm(0.12,1.76))
 
 

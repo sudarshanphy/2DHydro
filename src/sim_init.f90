@@ -168,9 +168,9 @@ contains
            iInt = i - Gpts
            jInt = j - Gpts
            solnVar(i,j, DENS_VAR) = gamma**2
-           solnVar(i,j, VELX_VAR) = gamma
-           solnVar(i,j, VELY_VAR) = -sin(y(j))
-           solnVar(i,j, PRES_VAR) = sin(x(i))
+           solnVar(i,j, VELX_VAR) = -sin(y(j))
+           solnVar(i,j, VELY_VAR) = sin(x(i))
+           solnVar(i,j, PRES_VAR) = gamma
 #ifdef MHD
            solnVar(i,j, BMFX_VAR) = -sin(y(j))
            solnVar(i,j, BMFY_VAR) = sin(2.0*x(i))
