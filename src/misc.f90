@@ -78,4 +78,31 @@ contains
 
     end function get_dt
 
+    function compute_maxdivB(Bx, By) result(maxdivB)
+      use sim_data, only: ilo, ihi, jlo, jhi, xTpts, yTpts, &
+                            dx, dy
+      implicit none
+      real(8), intent(in), dimension(xTpts, yTpts) :: Bx, By
+      real(8), dimension(xTpts, yTpts) :: divB
+      real(8) :: maxdivB
+
+      integer :: i, j
+      
+      divB = 0.0
+      do i = ilo, ihi
+        do j = jlo, jhi
+           divB(i,j) = (Bx(i,j) - Bx(i-1,j)) / dx &
+                + (By(i,j) - By(i,j-1)) / dy
+           !if (divB > tol) then
+           !  print *, "High error in divergence of B (> 1.0e-4)!"
+           !  !print *, "Error at x, y = ", xvals(i), yvals(j)
+           !  print *, "Error = ", divB
+           !  stop
+           !end if
+        end do
+      end do
+
+      maxdivB = maxval(divB)
+    end function compute_maxdivB
+
 end module misc_module

@@ -10,7 +10,7 @@ mpl.rcParams['font.size'] = 20.0
 
 #num = int(sys.argv[1])
 num = 0
-fname = "./output/rotor_test_%04d.dat"%(num)
+fname = "./output/rotormhd_test_%04d.dat"%(num)
 fieldname = "pres"
 
 f = open(fname, "r")

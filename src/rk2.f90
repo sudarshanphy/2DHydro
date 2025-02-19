@@ -5,9 +5,9 @@ contains
 
     subroutine RK2_SSP(dt, solnVar)
 #ifndef MHD       
-       use riemann_module, only: hllc,hlle
+       use flux_module, only: hllc,hlle
 #else
-       use riemann_module, only: hlle, hlld
+       use flux_module, only: hlle, hlld
 #endif
        use recon_module, only: recon_getcellfaces
        use eos_module, only: eos_getp

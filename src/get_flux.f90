@@ -1,4 +1,4 @@
-module riemann_module
+module flux_module
 #include "param.h"
     implicit none
 
@@ -639,5 +639,5 @@ contains
                                          (bxf**2 + byf**2 + bzf**2))
     end function eos_gete
 
-end module riemann_module
+end module flux_module
 

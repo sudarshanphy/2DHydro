@@ -7,7 +7,7 @@ program hydro
   use io_module, only: write_output
   use applyBC_module, only: applyBC_all
   use rk2_module, only: RK2_SSP
-  use misc_module, only: get_dt
+  use misc_module, only: get_dt, compute_maxdivB
 
   implicit none
 
@@ -20,6 +20,8 @@ program hydro
   
   real :: timer_start, timer_stop, time_per_step, timer_step0, &
           timer_step1
+ 
+  real :: maxdivB
 
   !read the parameter file
   call read_par()
@@ -89,7 +91,9 @@ program hydro
     call RK2_SSP(dt, solnVar(:,:,:))
     ! apply BC
     call applyBC_all(solnVar(:,:,:))
-
+#ifdef MHD
+    !maxdivB =  compute_maxdivB(solnVar(:,:,BMFX_VAR), solnVar(:,:,BMFY_VAR))
+#endif
     time = time + dt
     step = step + 1
 
@@ -108,13 +112,17 @@ program hydro
       outputno = outputno + 1
       call write_output(time, step, xval, yval, solnVar(ilo:ihi, jlo:jhi, :), outputno)
       print *, "$$$ Step: ", step," || time = ", time, " || output # = ", outputno," $$$" 
-    
       call CPU_TIME(timer_start)
     end if
 #ifdef MHD
     call glm(solnVar(:,:,BPSI_VAR), dt)
 #endif
+#ifndef MHD
     print *, "Step: ", step," --> time = ", time , ", dt = ", dt
+#else
+    print *, "Step: ", step," --> time = ", time , ", dt = ", dt !, &
+    !         " maxdivB = ", maxdivB
+#endif
   end do
   
   deallocate(solnVar)

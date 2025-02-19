@@ -21,7 +21,7 @@ endif
 #SRC = io.f90 test_io.f90
 SRC = sim_data.f90 misc.f90 read_par.f90 grid_init.f90 eos.f90 glm.f90 \
 			applyBC.f90 sim_init.f90 sim_restart.f90 io.f90 \
-			recon.f90 riemann.f90 rk2.f90 main.f90
+			recon.f90 get_flux.f90 get_resistive_flux.f90 rk2.f90 main.f90
 
 #object files have .o extension
 OBJ=${SRC:.f90=.o}
