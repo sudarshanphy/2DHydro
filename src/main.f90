@@ -1,4 +1,6 @@
 program hydro
+#include "param.h"
+
   use sim_data
   use sim_init, only: init_problem
   use sim_restart, only: restart_problem
@@ -6,14 +8,20 @@ program hydro
   use applyBC_module, only: applyBC_all
   use rk2_module, only: RK2_SSP
   use misc_module, only: get_dt 
+
   implicit none
+
   real, allocatable, dimension(:) :: xval, yval
-  real, allocatable, dimension(:, :) :: dens, velx, vely, pres, ener
-   
+
   real :: time, dtime, timeio
   integer ::  step, outputno
   logical :: io_output
   
+  real :: timer_start, timer_stop, time_per_step, timer_step0, &
+          timer_step1
+ 
+  real :: maxdivB
+
   !read the parameter file
   call read_par()
   
@@ -23,43 +31,40 @@ program hydro
   !initialize the grid
   call grid_init(xval, yval)
 
-  !allocate the fields
-  allocate(dens(xTpts, yTpts), velx(xTpts, yTpts), &
-           vely(xTpts, yTpts), pres(xTpts, yTpts), ener(xTpts, yTpts))
-
   ! check if it is a restart or not
   if (.not. restart) then
     step = 0
     outputno = 0
+
     !initialize the problem
-    call init_problem(xval, yval, dens, velx, vely, pres, ener)
-    call write_output(t0, step, xval, yval, &
-                      dens(ilo:ihi, jlo:jhi), velx(ilo:ihi, jlo:jhi), &
-                      vely(ilo:ihi, jlo:jhi), pres(ilo:ihi, jlo:jhi), &
-                      ener(ilo:ihi, jlo:jhi), outputno) 
+    call init_problem(xval, yval)
+                                             
+    call write_output(t0, step, xval, yval, outputno) 
 
   else
-    call restart_problem(restart_no, t0, dens, velx, vely, pres, ener)
+
+    ! restart a problem from an output file
+    call restart_problem(restart_no, t0)
     step = restart_step
     outputno = restart_no
     call write_output(t0, step, xval, yval, &
-                      dens(ilo:ihi, jlo:jhi), velx(ilo:ihi, jlo:jhi), &
-                      vely(ilo:ihi, jlo:jhi), pres(ilo:ihi, jlo:jhi), &
-                      ener(ilo:ihi, jlo:jhi), outputno, .true.) 
+                      outputno, .true.) 
 
   end if
-
-  call applyBC_all(dens, velx, vely, pres, ener)
+  
+  call CPU_TIME(timer_start)
+  timer_step0 = 0
+  call applyBC_all()
    
   time = t0
   timeio = time + out_dt
-   
   ! evolution loop
   do while (time < tf)
+
     io_output = .false.
     
     ! compute dt
-    dt = get_dt(dens, velx, vely, pres)
+    call get_dt(dt)
 
     if (time + dt > tf) then
       dt = tf - time
@@ -72,23 +77,42 @@ program hydro
       io_output = .true.
     end if
 
-    call RK2_SSP(dens, velx, vely, pres, ener, dt)
-    call applyBC_all(dens, velx, vely, pres, ener)
+
+#ifdef MHD
+    ! glm update psi 
+    call glm(dt)
+#endif 
+    ! do a SSP RK2 step
+    call RK2_SSP(dt)
+    ! apply BC
+    call applyBC_all()
+
     time = time + dt
     step = step + 1
 
     if (io_output) then
-      outputno = outputno + 1
-      call write_output(time, step, xval, yval, &
-                        dens(ilo:ihi, jlo:jhi), velx(ilo:ihi, jlo:jhi), &
-                        vely(ilo:ihi, jlo:jhi), pres(ilo:ihi, jlo:jhi), &
-                        ener(ilo:ihi, jlo:jhi), outputno)
-      print *, "$$$ Step: ", step," || time = ", time, " || output # = ", outputno," $$$" 
 
+      call CPU_TIME(timer_stop)
+      timer_step1 = step
+      time_per_step = (timer_stop - timer_start) &
+                     /(timer_step1 - timer_step0)
+
+      print *, "# step0 = ", timer_step0, " step1 = ", timer_step1
+      print *, "# time per step = ", time_per_step
+
+      timer_step0 = step
+
+      outputno = outputno + 1
+      call write_output(time, step, xval, yval, outputno)
+      print *, "$$$ Step: ", step," || time = ", time, " || output # = ", outputno," $$$" 
+      call CPU_TIME(timer_start)
     end if
+#ifdef MHD
+    call glm(dt)
+#endif
     print *, "Step: ", step," --> time = ", time , ", dt = ", dt
   end do
   
-  deallocate(dens, velx, vely, pres, ener)
+  deallocate(mainVar)
   deallocate(xval, yval)
 end program hydro

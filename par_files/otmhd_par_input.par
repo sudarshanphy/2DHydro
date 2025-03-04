@@ -1,26 +1,26 @@
 #parameter file for the 2D hydro solver
 
-problem = "rotormhd"
-basenm = "rotormhd_test"
+problem = "otmhd"
+basenm = "otmhd_test"
 xmin = 0.0
-xmax = 1.0
+xmax = 6.28318530718
 ymin = 0.0
-ymax = 1.0
+ymax = 6.28318530718
 nx = 200
 ny = 200
 t0 = 0.0
-tf = 0.5
+tf = 4.0
 dt = 1.0e-6
 out_dt = 0.1
-gamma = 1.4
+gamma = 1.66666666667
 cfl = 0.4
 grav = 0.0
 usegrav = .false.
 xbctype = "periodic"
 ybctype = "periodic"
 recon_method = "weno5"
-flux_solver = "hlld"
+flux_solver = "hlle"
 restart = .false.
-restart_no = 0
-restart_step = 0
+restart_no = 00
+restart_step = 00
 

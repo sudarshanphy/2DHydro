@@ -1,4 +1,5 @@
 subroutine grid_init(xIcenter, yIcenter)
+#include "param.h"
 
   use sim_data
   use misc_module, only: to_upper
@@ -18,6 +19,8 @@ subroutine grid_init(xIcenter, yIcenter)
 
   ilo = Gpts + 1; jlo = Gpts + 1
   ihi = nx + Gpts; jhi = ny + Gpts
+
+  allocate(mainVar(xTpts, yTpts, NVAR_NUMBER))
 
   do i =1, nx
     xIcenter(i) = xmin + (2 * i - 1) * dx / 2.0d0

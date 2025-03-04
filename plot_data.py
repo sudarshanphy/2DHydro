@@ -8,10 +8,10 @@ mpl.rcParams['font.family'] = 'DeJavu Serif'
 mpl.rcParams['font.serif'] = ['Times New Roman']
 mpl.rcParams['font.size'] = 20.0
 
-num = int(sys.argv[1])
-#num = 0
-fname = "./kh_test_%04d.dat"%(num)
-fieldname = "dens"
+#num = int(sys.argv[1])
+num = 0
+fname = "./output/rotormhd_test_%04d.dat"%(num)
+fieldname = "pres"
 
 f = open(fname, "r")
 
@@ -45,7 +45,11 @@ for line in lines[5:]:
     if (lst[0] != "####"):
         x_array.append(float(lst[0]))
         y_array.append(float(lst[1]))
-        data.append(float(lst[index]))
+        try:
+            data.append(float(lst[index]))
+        except:
+            data.append(float(0.0))            
+        
     
     
 x_array = np.array(x_array)
@@ -63,8 +67,8 @@ dmax = np.max(data)
 fig = plt.figure(figsize=(12,12)) # , layout='constrained')
 ax = plt.axes()
 #plt.title("2D Riemann problem (WENO5) at t= %8.3e"%(time))
-plt.pcolormesh(X, Y, np.transpose(data), cmap='turbo', \
-               vmax=2.1, vmin=0.9) # \
+plt.pcolormesh(X, Y, np.transpose(data), cmap='jet', \
+               vmax=dmax, vmin=dmin) # \
                #norm=mpl.colors.LogNorm(0.12,1.76))
 
 
@@ -72,4 +76,4 @@ ax.set_aspect('equal', adjustable='box')
 # this somehow makes the colorbar scale match with the y height
 plt.colorbar(label=fieldname,fraction=0.046, pad=0.04)
 plt.show()
-#plt.savefig("dens_riemann_test_weno3_%04d.png"%(num))   
+#plt.savefig("pres_otmhd_test_%04d.png"%(num), dpi=144)   

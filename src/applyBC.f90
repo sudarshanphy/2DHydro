@@ -1,4 +1,5 @@
 module applyBC_module
+#include "param.h"
   implicit none
 contains
 
@@ -8,7 +9,7 @@ contains
     use sim_data, only: xbctype, ybctype, &
                         xTpts, yTpts, Gpts
     implicit none
-    real(8), dimension(xTpts, yTpts), intent(inout) :: q
+    real, pointer :: q(:, :)
     character(len=1), intent(in) :: Dir
     logical, optional, intent(in) :: flip
     real :: sig
@@ -71,23 +72,28 @@ contains
     end select
   end subroutine applyBC
   
-  subroutine applyBC_all(dens, velx, vely, pres, ener)
-    use sim_data, only: xTpts, yTpts
+  subroutine applyBC_all()
+    use sim_data, only: xTpts, yTpts, mainVar
     implicit none
-    real, dimension(xTpts, yTpts), intent(inout) :: dens, velx, vely, pres, ener
+    real, pointer :: q(:,:)
+    integer :: n
 
-    call applyBC(dens, "x") 
-    call applyBC(velx, "x", .true.) 
-    call applyBC(vely, "x") 
-    call applyBC(pres, "x") 
-    call applyBC(ener, "x") 
+
+    do n=NVAR_BEGIN, NVAR_NUMBER
+       q(1:,1:) => mainVar(1:,1:,n)
+       if (n == VELX_VAR) then
+         call applyBC(q, "x", .true.)
+         call applyBC(q,"y")
+       else if (n == VELY_VAR) then
+         call applyBC(q, "y", .true.)
+         call applyBC(q,"x")
+       else
+         call applyBC(q, "x")
+         call applyBC(q, "y")
+      end if
+      nullify(q) 
+    end do
     
-    call applyBC(dens, "y") 
-    call applyBC(velx, "y") 
-    call applyBC(vely, "y", .true.) 
-    call applyBC(pres, "y") 
-    call applyBC(ener, "y")
-
   end subroutine applyBC_all
 end module applyBC_module
 
