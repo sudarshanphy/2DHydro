@@ -91,8 +91,8 @@ contains
       divB = 0.0
       do i = ilo, ihi
         do j = jlo, jhi
-           divB(i,j) = (Bx(i,j) - Bx(i-1,j)) / dx &
-                + (By(i,j) - By(i,j-1)) / dy
+           divB(i,j) = (Bx(i+1,j) - Bx(i-1,j)) / (2.0 * dx) &
+                + (By(i,j+1) - By(i,j-1)) / (2.0 * dy)
            !if (divB > tol) then
            !  print *, "High error in divergence of B (> 1.0e-4)!"
            !  !print *, "Error at x, y = ", xvals(i), yvals(j)
