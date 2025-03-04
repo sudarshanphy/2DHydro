@@ -2,17 +2,19 @@ module sim_restart
 #include "param.h"
   implicit none
 contains
-  subroutine restart_problem(fno, time, solnVar)
-    use sim_data, only: xTpts, yTpts, basenm, ilo, ihi, jlo, jhi
+  subroutine restart_problem(fno, time)
+    use sim_data, only: xTpts, yTpts, basenm, ilo, ihi, jlo, jhi, &
+                        mainVar
     implicit none
     integer, intent(in) :: fno
     real, intent(out) :: time
-    real, dimension(xTpts, yTpts, NVAR_NUMBER), intent(out) :: solnVar
+    real, pointer :: solnVar(:,:,:)
     integer :: i, j, ionum, pos1, pos2
     character(len=256) :: fname, line1, line2, line3, line4, line5, linehash
     character(len=10) :: int_to_str 
     real :: x, y
     
+    solnVar(ilo:,jlo:,1:) => mainVar(ilo:ihi,jlo:jhi,1:)
     solnVar(:,:,:) = 0.0
 
     ionum = 56 
@@ -39,6 +41,7 @@ contains
    pos1 = scan(line1, '=')
    pos2 = scan(line1, ",")
    read(line1(pos1+1:pos2-1), *) time
-
+  
+   nullify(solnVar)
   end subroutine restart_problem
 end module sim_restart

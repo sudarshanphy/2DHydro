@@ -9,7 +9,7 @@ contains
     use sim_data, only: xbctype, ybctype, &
                         xTpts, yTpts, Gpts
     implicit none
-    real(8), dimension(xTpts, yTpts), intent(inout) :: q
+    real, pointer :: q(:, :)
     character(len=1), intent(in) :: Dir
     logical, optional, intent(in) :: flip
     real :: sig
@@ -72,25 +72,28 @@ contains
     end select
   end subroutine applyBC
   
-  subroutine applyBC_all(solnVar)
-    use sim_data, only: xTpts, yTpts
+  subroutine applyBC_all()
+    use sim_data, only: xTpts, yTpts, mainVar
     implicit none
-    real, dimension(xTpts, yTpts, NVAR_NUMBER), intent(inout) :: solnVar
+    real, pointer :: q(:,:)
     integer :: n
 
+
     do n=NVAR_BEGIN, NVAR_NUMBER
+       q(1:,1:) => mainVar(1:,1:,n)
        if (n == VELX_VAR) then
-         call applyBC(solnVar(:,:,n), "x", .true.)
-         call applyBC(solnVar(:,:,n),"y")
+         call applyBC(q, "x", .true.)
+         call applyBC(q,"y")
        else if (n == VELY_VAR) then
-         call applyBC(solnVar(:,:,n), "y", .true.)
-         call applyBC(solnVar(:,:,n),"x")
+         call applyBC(q, "y", .true.)
+         call applyBC(q,"x")
        else
-         call applyBC(solnVar(:,:,n), "x")
-         call applyBC(solnVar(:,:,n), "y")
+         call applyBC(q, "x")
+         call applyBC(q, "y")
       end if
+      nullify(q) 
     end do
-     
+    
   end subroutine applyBC_all
 end module applyBC_module
 

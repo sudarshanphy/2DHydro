@@ -3,7 +3,7 @@ module rk2_module
   implicit none
 contains
 
-    subroutine RK2_SSP(dt, solnVar)
+    subroutine RK2_SSP(dt)
 #ifndef MHD       
        use flux_module, only: hllc,hlle
 #else
@@ -13,11 +13,11 @@ contains
        use eos_module, only: eos_getp
        use sim_data, only: grav, usegrav, ilo, ihi, jlo, jhi, &
                            gamma, dx, dy, yTpts, xTpts, smallf, &
-                           flux_solver
+                           flux_solver, mainVar
        use applyBC_module, only: applyBC_all 
        use misc_module, only: to_upper
        implicit none
-       real(8), dimension(xTpts, yTpts, NVAR_NUMBER), intent(inout) :: solnVar
+       real, pointer :: solnVar(:,:,:)
        real(8), intent(in) :: dt
 
        real(8), dimension(xTpts, yTpts, NCONSVAR_NUMBER) :: U, Up1
@@ -28,13 +28,8 @@ contains
        real(8), dimension(NCONSVAR_NUMBER) :: sgrav, sterm
 
        integer :: i, j, k, l, m, n
-
-#ifdef DEBUG_PAR
-       print *, "usegrav, grav = ", usegrav, grav
-       print *, "ilo, ihi, jlo, jhi = ", ilo, ihi, jlo, jhi
-       print *, "xTpts, yTpts, dx, dy = ", xTpts, yTpts, dx, dy
-       print *, "gamma = ", gamma
-#endif
+       
+       solnVar(1:,1:,1:) => mainVar(1:xTpts,1:yTpts,1:)
 
        sterm(:) = 0.0
        if (usegrav) then
@@ -63,9 +58,12 @@ contains
 #endif
          end do
        end do
-      
+       nullify(solnVar)
+
        ! rk2 has 2 steps
        do k = 1, 2
+         ! use the updated solution for the next step
+         solnVar(1:,1:,1:) => mainVar(1:xTpts,1:yTpts,1:)
 
          call recon_getcellfaces(dt, solnVar, &
                                  x_plus, x_minus, y_plus, y_minus)
@@ -134,10 +132,12 @@ contains
                call eos_getp(solnVar(i,j,:))
             end do
           end do
-
-          call applyBC_all(solnVar)
+          nullify(solnVar)
+          call applyBC_all()
 
        end do ! rk step loop
+       
+       solnVar(1:,1:,1:) => mainVar(1:xTpts,1:yTpts,1:)
 
        do j=jlo, jhi
          do i = ilo, ihi
@@ -155,6 +155,7 @@ contains
 
          end do
        end do
-       
+
+       nullify(solnVar) 
     end subroutine RK2_SSP
 end module rk2_module

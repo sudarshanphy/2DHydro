@@ -176,7 +176,7 @@ contains
         use misc_module, only: to_upper
         implicit none
         real, intent(in) :: dt
-        real, dimension(xTpts,yTpts,NVAR_NUMBER), intent(in) :: solnVar
+        real, pointer :: solnVar(:,:,:)
         real, dimension(xTpts,yTpts,NCONSVAR_NUMBER), intent(out) :: x_plus, x_minus, y_plus, y_minus
         
         integer :: i, j, n

@@ -12,7 +12,6 @@ program hydro
   implicit none
 
   real, allocatable, dimension(:) :: xval, yval
-  real, allocatable, dimension(:, :, :) :: solnVar
 
   real :: time, dtime, timeio
   integer ::  step, outputno
@@ -32,34 +31,30 @@ program hydro
   !initialize the grid
   call grid_init(xval, yval)
 
-  !allocate the fields
-  allocate(solnVar(xTpts, yTpts, NVAR_NUMBER))
-
   ! check if it is a restart or not
   if (.not. restart) then
     step = 0
     outputno = 0
 
     !initialize the problem
-    call init_problem(xval, yval, solnVar(:,:,:))
+    call init_problem(xval, yval)
                                              
-    call write_output(t0, step, xval, yval, solnVar(ilo:ihi, jlo:jhi, :), &
-                      outputno) 
+    call write_output(t0, step, xval, yval, outputno) 
 
   else
 
     ! restart a problem from an output file
-    call restart_problem(restart_no, t0, solnVar(:,:,:))
+    call restart_problem(restart_no, t0)
     step = restart_step
     outputno = restart_no
-    call write_output(t0, step, xval, yval, solnVar(ilo:ihi, jlo:jhi, :), &
+    call write_output(t0, step, xval, yval, &
                       outputno, .true.) 
 
   end if
   
   call CPU_TIME(timer_start)
   timer_step0 = 0
-  call applyBC_all(solnVar(:,:,:))
+  call applyBC_all()
    
   time = t0
   timeio = time + out_dt
@@ -69,7 +64,7 @@ program hydro
     io_output = .false.
     
     ! compute dt
-    dt = get_dt(solnVar(:,:,:))
+    call get_dt(dt)
 
     if (time + dt > tf) then
       dt = tf - time
@@ -85,12 +80,12 @@ program hydro
 
 #ifdef MHD
     ! glm update psi 
-    call glm(solnVar(:,:,BPSI_VAR), dt)
+    call glm(dt)
 #endif 
     ! do a SSP RK2 step
-    call RK2_SSP(dt, solnVar(:,:,:))
+    call RK2_SSP(dt)
     ! apply BC
-    call applyBC_all(solnVar(:,:,:))
+    call applyBC_all()
 
     time = time + dt
     step = step + 1
@@ -108,16 +103,16 @@ program hydro
       timer_step0 = step
 
       outputno = outputno + 1
-      call write_output(time, step, xval, yval, solnVar(ilo:ihi, jlo:jhi, :), outputno)
+      call write_output(time, step, xval, yval, outputno)
       print *, "$$$ Step: ", step," || time = ", time, " || output # = ", outputno," $$$" 
       call CPU_TIME(timer_start)
     end if
 #ifdef MHD
-    call glm(solnVar(:,:,BPSI_VAR), dt)
+    call glm(dt)
 #endif
     print *, "Step: ", step," --> time = ", time , ", dt = ", dt
   end do
   
-  deallocate(solnVar)
+  deallocate(mainVar)
   deallocate(xval, yval)
 end program hydro

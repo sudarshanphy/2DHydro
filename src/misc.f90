@@ -24,22 +24,25 @@ contains
     
     end function to_upper
 
-    function get_dt(solnVar) result(dt)
-      use sim_data, only: gamma, xTpts, yTpts, dx, dy, cfl
+    subroutine get_dt(dt)
+      use sim_data, only: gamma, xTpts, yTpts, dx, dy, cfl, &
+                          mainVar
 #ifdef MHD
       use sim_data, only: ch
 #endif
       implicit none
-      real, dimension(xTpts, yTpts, NVAR_NUMBER) :: solnVar
       real, dimension(xTpts, yTpts) :: xsmax, ysmax
       real :: cs, xcmax, ycmax   !sound speed
 #ifdef MHD  
       real :: cax, cay, cfx, cfy, B2, cB2 !alfven wave and magnetosonic wave
 #endif
-      real :: dt
+      real, intent(out) :: dt
       integer :: i, j
       real :: max_xsmax, max_ysmax 
-      
+      real, pointer :: solnVar(:,:,:)
+
+      solnVar(1:,1:,1:) => mainVar(:,:,:)
+
       do j = 1, yTpts
         do i = 1, xTpts
            cs = sqrt(gamma * solnVar(i,j,PRES_VAR) / solnVar(i,j,DENS_VAR))
@@ -74,9 +77,10 @@ contains
 #endif
 
       !print *, "max xsmax, ysmax = ", max_xsmax, max_ysmax 
-      dt = min(cfl * dx/max_xsmax, cfl * dy/max_ysmax) 
+      dt = min(cfl * dx/max_xsmax, cfl * dy/max_ysmax)
+      nullify(solnVar) 
 
-    end function get_dt
+    end subroutine get_dt
 
     function compute_maxdivB(Bx, By) result(maxdivB)
       use sim_data, only: ilo, ihi, jlo, jhi, xTpts, yTpts, &

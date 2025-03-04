@@ -11,6 +11,9 @@ module sim_data
   real, parameter :: PI = 4.0 * atan(1.0)
   real, parameter :: smallf = 1.0e-30
 
+  ! array which has the solution
+  real, save, dimension(:,:,:), target, allocatable :: mainVar
+
   ! only used by MHD runs 
   real, save :: ch !speed for divergence cleaning
 end module sim_data

@@ -2,21 +2,23 @@ module sim_init
 #include "param.h"
   implicit none
 contains
-  subroutine init_problem(x, y, solnVar)
+  subroutine init_problem(x, y)
 
     use sim_data, only: problem, xTpts, yTpts, &
                         nx, ny, Gpts, ihi, ilo, jhi, &
-                        jlo, PI, grav, usegrav, gamma
+                        jlo, PI, grav, usegrav, gamma, &
+                        mainVar
 
     use misc_module, only: to_upper
     use eos_module, only: eos_gete, eos_getp
     implicit none
     real, dimension(nx), intent(in) :: x
     real, dimension(ny), intent(in) :: y
-    real, dimension(xTpts, yTpts, NVAR_NUMBER), intent(out) :: solnVar
+    real, pointer :: solnVar(:,:,:)
     integer :: i, j, iInt, jInt
     real :: r
     
+    solnVar(ilo:,jlo:,1:) => mainVar(ilo:ihi,jlo:jhi,1:)    
     solnVar(:,:,:) = 0.0
 
     select case (to_upper(trim(problem)))
@@ -218,6 +220,7 @@ contains
     case default
       print *, "such problem not defined"
     end select    
-     
+    
+  nullify(solnVar)  
   end subroutine init_problem
 end module sim_init
