@@ -7,7 +7,7 @@ contains
 
     use misc_module, only: to_upper
     use sim_data, only: xbctype, ybctype, &
-                        xTpts, yTpts, Gpts
+                        iGlo, iGhi, jGlo, jGhi, Gpts
     implicit none
     real, pointer :: q(:, :)
     character(len=1), intent(in) :: Dir
@@ -18,11 +18,11 @@ contains
     select case (to_upper(Dir))
     case ('X')
       if (to_upper(trim(xbctype)) == "PERIODIC") then
-        do ii  = 1, Gpts
+        do ii  = iGlo, ilo - 1
           ! lower face
-          q(ii, :) = q(xTpts-2*Gpts+ii, :)
+          q(ii, :) = q(iGhi-2*Gpts+ii, :)
           ! upper face
-          q(xTpts-Gpts+ii, :) = q(Gpts + ii, :)
+          q(iGhi-Gpts+ii, :) = q(Gpts + ii, :)
         end do
       else if (to_upper(trim(xbctype)) == "FLOW") then
         do ii  = 1, Gpts
@@ -73,26 +73,40 @@ contains
   end subroutine applyBC
   
   subroutine applyBC_all()
-    use sim_data, only: xTpts, yTpts, mainVar
+    use sim_data, only: mainVar, iGlo, iGhi, &
+                        jGlo, jGhi, at_xboundary, &
+                        at_yboundary
     implicit none
     real, pointer :: q(:,:)
     integer :: n
 
+    if (at_xboundary) then 
+       do n=NVAR_BEGIN, NVAR_NUMBER
+          q(iGlo:,jGlo:) => mainVar(:,:,n)
+          if (n == VELX_VAR) then
+            call applyBC(q, "x", .true.)
+          else if (n == VELY_VAR) then
+            call applyBC(q,"x")
+          else
+            call applyBC(q, "x")
+         end if
+         nullify(q) 
+       end do
+    endif
 
-    do n=NVAR_BEGIN, NVAR_NUMBER
-       q(1:,1:) => mainVar(1:,1:,n)
-       if (n == VELX_VAR) then
-         call applyBC(q, "x", .true.)
-         call applyBC(q,"y")
-       else if (n == VELY_VAR) then
-         call applyBC(q, "y", .true.)
-         call applyBC(q,"x")
-       else
-         call applyBC(q, "x")
-         call applyBC(q, "y")
-      end if
-      nullify(q) 
-    end do
+    if (at_yboundary) then 
+       do n=NVAR_BEGIN, NVAR_NUMBER
+          q(iGlo:,jGlo:) => mainVar(:,:,n)
+          if (n == VELX_VAR) then
+            call applyBC(q,"y")
+          else if (n == VELY_VAR) then
+            call applyBC(q, "y", .true.)
+          else
+            call applyBC(q, "y")
+         end if
+         nullify(q) 
+       end do
+    endif
     
   end subroutine applyBC_all
 end module applyBC_module

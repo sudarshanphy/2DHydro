@@ -2,24 +2,33 @@ module sim_init
 #include "param.h"
   implicit none
 contains
-  subroutine init_problem(x, y)
+  subroutine init_problem()
 
-    use sim_data, only: problem, xTpts, yTpts, &
-                        nx, ny, Gpts, ihi, ilo, jhi, &
+    use sim_data, only: problem, Gpts, ihi, ilo, jhi, &
                         jlo, PI, grav, usegrav, gamma, &
                         mainVar
-
+    use grid_func, only: get_coords
     use misc_module, only: to_upper
     use eos_module, only: eos_gete, eos_getp
+
     implicit none
-    real, dimension(nx), intent(in) :: x
-    real, dimension(ny), intent(in) :: y
     real, pointer :: solnVar(:,:,:)
     integer :: i, j, iInt, jInt
     real :: r
+    real, allocatable :: x(:), y(:)
+
+    allocate(x(ilo:ihi))
+    allocate(y(jlo:jhi))
+
+    x = 0.0
+    y = 1.0
     
+    call get_coords('x',ilo,ihi,x)
+    call get_coords('y',jlo,jhi,y)
+
     solnVar(ilo:,jlo:,1:) => mainVar(ilo:ihi,jlo:jhi,1:)    
     solnVar(:,:,:) = 0.0
+
 
     select case (to_upper(trim(problem)))
 
@@ -28,8 +37,8 @@ contains
       do j = jlo, jhi
         do i = ilo, ihi
            ! shift to interior index
-           iInt = i - Gpts
-           jInt = j - Gpts
+           iInt = i 
+           jInt = j 
 
            ! initialize the fields
            solnVar(i,j, DENS_VAR) = 1.0e0
@@ -50,8 +59,8 @@ contains
       do j = jlo, jhi
         do i = ilo, ihi
            ! shift to interior index
-           iInt = i - Gpts
-           jInt = j - Gpts
+           iInt = i 
+           jInt = j 
 
            ! initialize the fields
            solnVar(i,j, DENS_VAR) = 1.0e0
@@ -69,8 +78,8 @@ contains
       do j = jlo, jhi
         do i = ilo, ihi
            ! shift to interior index
-           iInt = i - Gpts
-           jInt = j - Gpts
+           iInt = i 
+           jInt = j 
 
            ! initialize the fields
            if (abs(y(jInt) - 0.5) > 0.25) then
@@ -104,8 +113,8 @@ contains
       do j = jlo, jhi
         do i = ilo, ihi
            ! shift to interior index
-           iInt = i - Gpts
-           jInt = j - Gpts
+           iInt = i 
+           jInt = j 
 
            ! initialize the fields
            if (y(jInt) > 0.0) then
@@ -133,8 +142,8 @@ contains
       do j = jlo, jhi
         do i = ilo, ihi
            ! shift to interior index
-           iInt = i - Gpts
-           jInt = j - Gpts
+           iInt = i 
+           jInt = j 
 
            ! initialize the fields
            if ((x(iInt) <= 0.8) .and. (y(jInt) <= 0.8)) then
@@ -167,8 +176,8 @@ contains
       do j = jlo, jhi
         do i = ilo, ihi
            ! shift to interior index
-           iInt = i - Gpts
-           jInt = j - Gpts
+           iInt = i 
+           jInt = j 
            solnVar(i,j, DENS_VAR) = gamma**2
            solnVar(i,j, VELX_VAR) = -sin(y(j))
            solnVar(i,j, VELY_VAR) = sin(x(i))
@@ -189,8 +198,8 @@ contains
       do j = jlo, jhi
         do i = ilo, ihi
            ! shift to interior index
-           iInt = i - Gpts
-           jInt = j - Gpts
+           iInt = i 
+           jInt = j 
            r = sqrt((x(iInt) - 0.5)**2 + (y(jInt) - 0.5)**2)
            if (r < 0.1) then
              solnVar(i,j, DENS_VAR) = 10.0
@@ -219,8 +228,9 @@ contains
       end do
     case default
       print *, "such problem not defined"
-    end select    
-    
+    end select
+
+  deallocate(x,y)  
   nullify(solnVar)  
   end subroutine init_problem
 end module sim_init

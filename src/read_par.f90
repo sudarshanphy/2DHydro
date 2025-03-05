@@ -19,7 +19,8 @@ subroutine read_par()
         gamma = 1.4; cfl = 0.4; grav = 0.0
         xbctype = "periodic"; ybctype = "periodic"; problem = "none" 
         basenm = "def"; restart = .false.; usegrav = .false.;
-        recon_method = "weno3"; flux_solver = "hllc"
+        recon_method = "weno3"; flux_solver = "hlle";
+        xblk = 1; yblk = 1
  
         open(no, file='./par_input.par')
 
@@ -46,6 +47,10 @@ subroutine read_par()
                  read(buffer, *, iostat=ios) ymin
               case ('ymax')
                  read(buffer, *, iostat=ios) ymax
+              case ('xblk')
+                 read(buffer, *, iostat=ios) xblk
+              case ('yblk')
+                 read(buffer, *, iostat=ios) yblk
               case ('nx')
                  read(buffer, *, iostat=ios) nx
               case ('ny')

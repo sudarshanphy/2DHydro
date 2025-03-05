@@ -1,3 +1,6 @@
+
+#define MASTER_PROC 0
+
 #if 0
  How many primitive variables are there in the simulation
 #endif

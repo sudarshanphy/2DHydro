@@ -15,7 +15,7 @@ subroutine glm(dt)
   real(8), dimension(xTpts, yTpts) :: tmp_array
 
 #ifdef MHD  
-  bpsi(1:,1:) => mainVar(1:,1:,BPSI_VAR)
+  bpsi(iGlo:,jGlo:) => mainVar(:,:,BPSI_VAR)
   !print *, "ch = ", ch
   exp_factor = exp( -0.5e0 * dt * ch / cr )
   

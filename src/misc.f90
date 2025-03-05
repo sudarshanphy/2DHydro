@@ -1,5 +1,6 @@
 module misc_module
 #include "param.h"
+  use mpi
   implicit none
 contains
 
@@ -25,26 +26,29 @@ contains
     end function to_upper
 
     subroutine get_dt(dt)
-      use sim_data, only: gamma, xTpts, yTpts, dx, dy, cfl, &
-                          mainVar
+      use sim_data, only: gamma, dx, dy, cfl, &
+                          mainVar, iGlo, iGhi, &
+                          jGlo, jGhi, comm, ierr
+      use mpi
 #ifdef MHD
       use sim_data, only: ch
 #endif
       implicit none
-      real, dimension(xTpts, yTpts) :: xsmax, ysmax
+      real, dimension(iGlo:iGhi, jGlo:jGhi) :: xsmax, ysmax
       real :: cs, xcmax, ycmax   !sound speed
 #ifdef MHD  
       real :: cax, cay, cfx, cfy, B2, cB2 !alfven wave and magnetosonic wave
 #endif
       real, intent(out) :: dt
+      real :: localdt, localch
       integer :: i, j
       real :: max_xsmax, max_ysmax 
       real, pointer :: solnVar(:,:,:)
 
-      solnVar(1:,1:,1:) => mainVar(:,:,:)
+      solnVar(iGlo:,jGlo:,1:) => mainVar(:,:,:)
 
-      do j = 1, yTpts
-        do i = 1, xTpts
+      do j = jGlo, jGhi
+        do i = iGlo, iGhi
            cs = sqrt(gamma * solnVar(i,j,PRES_VAR) / solnVar(i,j,DENS_VAR))
 
            if (cs < 0.0) then
@@ -73,11 +77,16 @@ contains
       
 #ifdef MHD
       !speed for divergence cleaning
-      ch = max(max_xsmax, max_ysmax)
+      localch = max(max_xsmax, max_ysmax)
+      ! get max ch from all the cores
+      call MPI_ALLREDUCE(localch, ch, 1, MPI_DOUBLE, MPI_MAX, comm, ierr)
 #endif
 
       !print *, "max xsmax, ysmax = ", max_xsmax, max_ysmax 
-      dt = min(cfl * dx/max_xsmax, cfl * dy/max_ysmax)
+      localdt = min(cfl * dx/max_xsmax, cfl * dy/max_ysmax)
+      
+      ! get min dt from all the cores
+      call MPI_ALLREDUCE(localdt, dt, 1, MPI_DOUBLE, MPI_MIN, comm, ierr)
       nullify(solnVar) 
 
     end subroutine get_dt

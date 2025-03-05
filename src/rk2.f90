@@ -13,7 +13,9 @@ contains
        use eos_module, only: eos_getp
        use sim_data, only: grav, usegrav, ilo, ihi, jlo, jhi, &
                            gamma, dx, dy, yTpts, xTpts, smallf, &
-                           flux_solver, mainVar
+                           flux_solver, mainVar, iGlo, jGlo, iGhi, &
+                           jGhi
+
        use applyBC_module, only: applyBC_all 
        use misc_module, only: to_upper
        implicit none
@@ -29,7 +31,7 @@ contains
 
        integer :: i, j, k, l, m, n
        
-       solnVar(1:,1:,1:) => mainVar(1:xTpts,1:yTpts,1:)
+       solnVar(iGlo:,jGlo:,1:) => mainVar(:,:,1:)
 
        sterm(:) = 0.0
        if (usegrav) then
@@ -63,7 +65,7 @@ contains
        ! rk2 has 2 steps
        do k = 1, 2
          ! use the updated solution for the next step
-         solnVar(1:,1:,1:) => mainVar(1:xTpts,1:yTpts,1:)
+         solnVar(iGlo:,jGlo:,1:) => mainVar(:,:,1:)
 
          call recon_getcellfaces(dt, solnVar, &
                                  x_plus, x_minus, y_plus, y_minus)
@@ -137,10 +139,10 @@ contains
 
        end do ! rk step loop
        
-       solnVar(1:,1:,1:) => mainVar(1:xTpts,1:yTpts,1:)
+       solnVar(iGlo:,jGlo:,1:) => mainVar(:,:,1:)
 
-       do j=jlo, jhi
-         do i = ilo, ihi
+       do j=jGlo, jGhi
+         do i = iGlo, iGhi
            Up1(i,j,:) = 0.5e0 * (U(i,j,:) + Up1(i,j,:))
 
            ! get primitive quantities

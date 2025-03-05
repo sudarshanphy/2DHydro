@@ -2,16 +2,18 @@ program hydro
 #include "param.h"
 
   use sim_data
+  use grid_func, only: grid_init, get_coords
   use sim_init, only: init_problem
   use sim_restart, only: restart_problem
   use io_module, only: write_output
   use applyBC_module, only: applyBC_all
   use rk2_module, only: RK2_SSP
-  use misc_module, only: get_dt 
+  use misc_module, only: get_dt
+  use mpi_func, only: init_procs, finalize_procs, &
+                               check_procs
+  use mpi 
 
   implicit none
-
-  real, allocatable, dimension(:) :: xval, yval
 
   real :: time, dtime, timeio
   integer ::  step, outputno
@@ -22,14 +24,17 @@ program hydro
  
   real :: maxdivB
 
-  !read the parameter file
+  ! initilize mpi
+  call init_procs()
+
+  !read the parameter file by each processor
   call read_par()
-  
-  !allocate space for the interior grid points
-  allocate(xval(nx), yval(ny))
+
+  !check processor numbers
+  call check_procs()
 
   !initialize the grid
-  call grid_init(xval, yval)
+  call grid_init()
 
   ! check if it is a restart or not
   if (.not. restart) then
@@ -37,9 +42,9 @@ program hydro
     outputno = 0
 
     !initialize the problem
-    call init_problem(xval, yval)
-                                             
-    call write_output(t0, step, xval, yval, outputno) 
+    call init_problem()
+                                            
+    call write_output(t0, step, outputno) 
 
   else
 
@@ -47,11 +52,11 @@ program hydro
     call restart_problem(restart_no, t0)
     step = restart_step
     outputno = restart_no
-    call write_output(t0, step, xval, yval, &
-                      outputno, .true.) 
+    call write_output(t0, step, outputno, .true.) 
 
   end if
-  
+
+#if 0 
   call CPU_TIME(timer_start)
   timer_step0 = 0
   call applyBC_all()
@@ -85,7 +90,7 @@ program hydro
     ! do a SSP RK2 step
     call RK2_SSP(dt)
     ! apply BC
-    call applyBC_all()
+    ! call applyBC_all()
 
     time = time + dt
     step = step + 1
@@ -103,7 +108,7 @@ program hydro
       timer_step0 = step
 
       outputno = outputno + 1
-      call write_output(time, step, xval, yval, outputno)
+      !call write_output(time, step, xval, yval, outputno)
       print *, "$$$ Step: ", step," || time = ", time, " || output # = ", outputno," $$$" 
       call CPU_TIME(timer_start)
     end if
@@ -112,7 +117,9 @@ program hydro
 #endif
     print *, "Step: ", step," --> time = ", time , ", dt = ", dt
   end do
-  
+
+#endif
+
   deallocate(mainVar)
-  deallocate(xval, yval)
+  call finalize_procs()
 end program hydro

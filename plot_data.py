@@ -8,9 +8,22 @@ mpl.rcParams['font.family'] = 'DeJavu Serif'
 mpl.rcParams['font.serif'] = ['Times New Roman']
 mpl.rcParams['font.size'] = 20.0
 
-#num = int(sys.argv[1])
+def get_blk_info(basenm):
+    fname = "./output/"+basenm+"_0000_0000.dat"
+    f = open(fname, "r")
+    lines = f.readlines()[0:7]
+
+    print(lines)
+    return
+
+
+basenm = "rotormhd_test"
+
+get_blk_info(basenm)
+
+'''
 num = 0
-fname = "./output/rotormhd_test_%04d.dat"%(num)
+fname = "./output/rotormhd_test_0000_%04d.dat"%(num)
 fieldname = "pres"
 
 f = open(fname, "r")
@@ -77,3 +90,4 @@ ax.set_aspect('equal', adjustable='box')
 plt.colorbar(label=fieldname,fraction=0.046, pad=0.04)
 plt.show()
 #plt.savefig("pres_otmhd_test_%04d.png"%(num), dpi=144)   
+'''
