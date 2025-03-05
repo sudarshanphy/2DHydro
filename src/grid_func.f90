@@ -59,8 +59,8 @@ module grid_func
   
     allocate(mainVar(iGlo:iGhi, jGlo:jGhi, NVAR_NUMBER))
  
-    print *, "myrank, xl, xr, yl, yr = ", myrank, at_xlboundary, at_xrboundary, &
-                                                  at_ylboundary, at_yrboundary 
+    !print *, "myrank, xl, xr, yl, yr = ", myrank, at_xlboundary, at_xrboundary, &
+    !                                              at_ylboundary, at_yrboundary 
   end subroutine grid_init
 
 
