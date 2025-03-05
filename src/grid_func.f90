@@ -31,10 +31,15 @@ module grid_func
     jhi = (yrank + 1) * lny 
  
     ! is the block at the boundary
-    at_xboundary = .false.
-    at_yboundary = .false.
-    if ((ilo == 1) .or. (ihi == nx)) at_xboundary = .true.
-    if ((jlo == 1) .or. (jhi == ny)) at_yboundary = .true.
+    at_xlboundary = .false.
+    at_xrboundary = .false.
+    at_ylboundary = .false.
+    at_yrboundary = .false.
+
+    if (ilo == 1)  at_xlboundary = .true.
+    if (ihi == nx) at_xrboundary = .true.
+    if (jlo == 1)  at_ylboundary = .true.
+    if (jhi == ny) at_yrboundary = .true.
 
     ! compute index of interior + guard cells
     iGlo = ilo - Gpts
@@ -54,7 +59,8 @@ module grid_func
   
     allocate(mainVar(iGlo:iGhi, jGlo:jGhi, NVAR_NUMBER))
  
-    !print *, "myrank, xboundary, yboundary = ", myrank, at_xboundary, at_yboundary 
+    print *, "myrank, xl, xr, yl, yr = ", myrank, at_xlboundary, at_xrboundary, &
+                                                  at_ylboundary, at_yrboundary 
   end subroutine grid_init
 
 

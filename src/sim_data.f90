@@ -6,7 +6,8 @@ module sim_data
   real, save :: gamma, cfl, grav
   integer, save :: nx, ny, Gpts, xTpts, yTpts, restart_no, &
                    restart_step 
-  character(len=256), save :: xbctype, ybctype, problem, &
+  character(len=256), save :: xlbctype, ylbctype, xrbctype, yrbctype
+  character(len=256), save :: problem, &
                               basenm, recon_method, flux_solver
   logical, save :: restart, usegrav
   real, parameter :: PI = 4.0 * atan(1.0)
@@ -30,5 +31,5 @@ module sim_data
   real, save :: lxmin, lxmax, lymin, lymax
   ! blocks to the left, right, top, bottom
   integer, save :: l_blk, r_blk, t_blk, b_blk
-  logical, save :: at_xboundary, at_yboundary
+  logical, save :: at_xlboundary, at_ylboundary, at_xrboundary, at_yrboundary
 end module sim_data

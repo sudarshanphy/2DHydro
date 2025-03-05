@@ -17,7 +17,9 @@ subroutine read_par()
         nx = 10; ny = 10; restart_no = 0; restart_step = 0
         t0 = 0.0; tf = 0.5; dt = 1.0e-4; out_dt = 1.0e-3
         gamma = 1.4; cfl = 0.4; grav = 0.0
-        xbctype = "periodic"; ybctype = "periodic"; problem = "none" 
+        xlbctype = "flow"; ylbctype = "flow" 
+        xrbctype = "flow"; yrbctype = "flow" 
+        problem = "none" 
         basenm = "def"; restart = .false.; usegrav = .false.;
         recon_method = "weno3"; flux_solver = "hlle";
         xblk = 1; yblk = 1
@@ -71,10 +73,14 @@ subroutine read_par()
                  read(buffer, *, iostat=ios) grav
               case ('usegrav')
                  read(buffer, *, iostat=ios) usegrav
-              case ('xbctype')
-                 read(buffer, *, iostat=ios) xbctype
-              case ('ybctype')
-                 read(buffer, *, iostat=ios) ybctype
+              case ('xlbctype')
+                 read(buffer, *, iostat=ios) xlbctype
+              case ('xrbctype')
+                 read(buffer, *, iostat=ios) xrbctype
+              case ('ylbctype')
+                 read(buffer, *, iostat=ios) ylbctype
+              case ('yrbctype')
+                 read(buffer, *, iostat=ios) yrbctype
               case ('problem')
                  read(buffer, *, iostat=ios) problem
               case ('basenm')
