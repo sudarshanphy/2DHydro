@@ -84,9 +84,11 @@ contains
 
       !print *, "max xsmax, ysmax = ", max_xsmax, max_ysmax 
       localdt = min(cfl * dx/max_xsmax, cfl * dy/max_ysmax)
-      
+     
+      !print *, "local dt = ", localdt 
       ! get min dt from all the cores
       call MPI_ALLREDUCE(localdt, dt, 1, MPI_DOUBLE, MPI_MIN, comm, ierr)
+      !print *, "global dt = ", dt
       nullify(solnVar) 
 
     end subroutine get_dt

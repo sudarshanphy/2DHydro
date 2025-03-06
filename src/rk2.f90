@@ -12,7 +12,7 @@ contains
        use recon_module, only: recon_getcellfaces
        use eos_module, only: eos_getp
        use sim_data, only: grav, usegrav, ilo, ihi, jlo, jhi, &
-                           gamma, dx, dy, yTpts, xTpts, smallf, &
+                           gamma, dx, dy, lyTpts, lxTpts, smallf, &
                            flux_solver, mainVar, iGlo, jGlo, iGhi, &
                            jGhi
 
@@ -22,10 +22,10 @@ contains
        real, pointer :: solnVar(:,:,:)
        real(8), intent(in) :: dt
 
-       real(8), dimension(xTpts, yTpts, NCONSVAR_NUMBER) :: U, Up1
-       real(8), dimension(xTpts, yTpts, NCONSVAR_NUMBER) :: x_plus, x_minus, y_plus, y_minus
+       real(8), dimension(iGlo:iGhi, jGlo:jGhi, NCONSVAR_NUMBER) :: U, Up1
+       real(8), dimension(iGlo:iGhi,jGlo:jGhi, NCONSVAR_NUMBER) :: x_plus, x_minus, y_plus, y_minus
    
-       real(8), dimension(xTpts, yTpts, NCONSVAR_NUMBER) :: xF, yF
+       real(8), dimension(iGlo:iGhi, jGlo:jGhi, NCONSVAR_NUMBER) :: xF, yF
        real(8), dimension(NCONSVAR_NUMBER) :: Uleft, Uright, Vleft, Vright
        real(8), dimension(NCONSVAR_NUMBER) :: sgrav, sterm
 
@@ -40,8 +40,8 @@ contains
        end if
        U = 0.0; Up1 = 0.0
 
-       do j = 1, yTpts
-         do i = 1, xTpts
+       do j = jGlo, jGhi
+         do i = iGlo, iGhi
            Up1(i,j,DENS_CONS) = solnVar(i,j,DENS_VAR) 
            Up1(i,j,MOMX_CONS:MOMZ_CONS) = solnVar(i,j,DENS_VAR) * solnVar(i,j,VELX_VAR:VELZ_VAR)
            Up1(i,j,ENER_CONS) = solnVar(i,j,ENER_VAR)
@@ -135,6 +135,7 @@ contains
             end do
           end do
           nullify(solnVar)
+          call guardcell_fill()
           call applyBC_all()
 
        end do ! rk step loop

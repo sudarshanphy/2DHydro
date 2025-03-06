@@ -24,8 +24,8 @@ contains
   allocate(x(ilo:ihi))
   allocate(y(jlo:jhi))
 
-  call get_coords('x',ilo,ihi,x(ilo:ihi))
-  call get_coords('y',ilo,ihi,y(jlo:jhi))
+  call get_coords('x',ilo,ihi,x)
+  call get_coords('y',jlo,jhi,y)
 
   solnVar(ilo:,jlo:,1:) => mainVar(ilo:ihi, jlo:jhi, 1:)
   ionum = 100

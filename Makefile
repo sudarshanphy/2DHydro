@@ -21,7 +21,7 @@ endif
 #SRC=misc.f90 recon.f90 eos.f90 hllc.f90 test_hllc.f90
 #SRC = io.f90 test_io.f90
 SRC = sim_data.f90 mpi_func.f90 misc.f90 \
-			read_par.f90 grid_func.f90 \
+			read_par.f90 grid_func.f90 guardcell_fill.f90\
 			eos.f90 glm.f90 \
 			applyBC.f90 sim_init.f90 sim_restart.f90 io.f90 \
 			recon.f90 get_flux.f90 get_resistive_flux.f90 rk2.f90 main.f90

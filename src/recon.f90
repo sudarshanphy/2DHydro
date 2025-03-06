@@ -172,12 +172,12 @@ contains
   subroutine recon_getcellfaces(dt, solnVar, x_plus, x_minus, y_plus, y_minus)
 
         use sim_data, only: xTpts, yTpts, dx, dy, gamma, ilo, ihi, jlo, jhi, & 
-                            recon_method
+                            recon_method, iGlo, iGhi, jGlo, jGhi
         use misc_module, only: to_upper
         implicit none
         real, intent(in) :: dt
         real, pointer :: solnVar(:,:,:)
-        real, dimension(xTpts,yTpts,NCONSVAR_NUMBER), intent(out) :: x_plus, x_minus, y_plus, y_minus
+        real, dimension(iGlo:iGhi,jGlo:jGhi,NCONSVAR_NUMBER), intent(out) :: x_plus, x_minus, y_plus, y_minus
         
         integer :: i, j, n
 

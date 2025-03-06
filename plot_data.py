@@ -8,21 +8,8 @@ mpl.rcParams['font.family'] = 'DeJavu Serif'
 mpl.rcParams['font.serif'] = ['Times New Roman']
 mpl.rcParams['font.size'] = 20.0
 
-def get_blk_info(basenm):
-    fname = "./output/"+basenm+"_0000_0000.dat"
-    f = open(fname, "r")
-    lines = f.readlines()[0:7]
-
-    print(lines)
-    return
-
-
-basenm = "rotormhd_test"
-
-get_blk_info(basenm)
-
-'''
-num = 0
+#num = int(sys.argv[1])
+num = 1
 fname = "./output/rotormhd_test_0000_%04d.dat"%(num)
 fieldname = "pres"
 
@@ -41,7 +28,8 @@ dy = float(lines[2].split()[-1])
 gamma = float(lines[3].split()[-1])
 
 
-fields = lines[4].split()
+fields = lines[6].split()
+print(fields)
 for i,field in enumerate(fields):
     if (field == fieldname.lower()):
         index = i - 1
@@ -53,7 +41,7 @@ x_array = []
 y_array = []
 data = []
 
-for line in lines[5:]:
+for line in lines[7:]:
     lst = line.split()
     if (lst[0] != "####"):
         x_array.append(float(lst[0]))
@@ -90,4 +78,3 @@ ax.set_aspect('equal', adjustable='box')
 plt.colorbar(label=fieldname,fraction=0.046, pad=0.04)
 plt.show()
 #plt.savefig("pres_otmhd_test_%04d.png"%(num), dpi=144)   
-'''

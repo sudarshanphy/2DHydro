@@ -29,7 +29,6 @@ contains
     solnVar(ilo:,jlo:,1:) => mainVar(ilo:ihi,jlo:jhi,1:)    
     solnVar(:,:,:) = 0.0
 
-
     select case (to_upper(trim(problem)))
 
     case ("SEDOV")

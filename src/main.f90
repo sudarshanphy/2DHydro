@@ -56,10 +56,11 @@ program hydro
 
   end if
 
-#if 0 
   call CPU_TIME(timer_start)
   timer_step0 = 0
   call applyBC_all()
+  call guardcell_fill()
+
    
   time = t0
   timeio = time + out_dt
@@ -82,7 +83,6 @@ program hydro
       io_output = .true.
     end if
 
-
 #ifdef MHD
     ! glm update psi 
     call glm(dt)
@@ -101,24 +101,28 @@ program hydro
       timer_step1 = step
       time_per_step = (timer_stop - timer_start) &
                      /(timer_step1 - timer_step0)
-
-      print *, "# step0 = ", timer_step0, " step1 = ", timer_step1
-      print *, "# time per step = ", time_per_step
-
+      
+      if (myrank == MASTER_PROC) then
+        print *, "# step0 = ", timer_step0, " step1 = ", timer_step1
+        print *, "# time per step = ", time_per_step
+      end if
       timer_step0 = step
 
       outputno = outputno + 1
-      !call write_output(time, step, xval, yval, outputno)
-      print *, "$$$ Step: ", step," || time = ", time, " || output # = ", outputno," $$$" 
+      call write_output(time, step, outputno)
+      if (myrank == MASTER_PROC) then
+        print *, "$$$ Step: ", step," || time = ", time, " || output # = ", outputno," $$$" 
+      end if
       call CPU_TIME(timer_start)
     end if
 #ifdef MHD
     call glm(dt)
 #endif
-    print *, "Step: ", step," --> time = ", time , ", dt = ", dt
+    if (myrank == MASTER_PROC) then
+      print *, "Step: ", step," --> time = ", time , ", dt = ", dt
+    end if
   end do
 
-#endif
 
   deallocate(mainVar)
   call finalize_procs()
