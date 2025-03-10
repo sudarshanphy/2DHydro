@@ -9,8 +9,8 @@ program hydro
   use applyBC_module, only: applyBC_all
   use rk2_module, only: RK2_SSP
   use misc_module, only: get_dt
-  use mpi_func, only: init_procs, finalize_procs, &
-                               check_procs
+  use mpi_func
+               
   use mpi 
 
   implicit none
@@ -35,7 +35,8 @@ program hydro
 
   !initialize the grid
   call grid_init()
-
+  
+  call create_mpiDatatypes()
   ! check if it is a restart or not
   if (.not. restart) then
     step = 0
@@ -58,9 +59,10 @@ program hydro
 
   call CPU_TIME(timer_start)
   timer_step0 = 0
-  call applyBC_all()
   call guardcell_fill()
-
+  call applyBC_all()
+  
+  !stop
    
   time = t0
   timeio = time + out_dt

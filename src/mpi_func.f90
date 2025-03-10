@@ -46,4 +46,30 @@ module mpi_func
       call MPI_FINALIZE(ierr)
       stop
     end subroutine
+
+    subroutine create_mpiDatatypes()
+      use sim_data, only: Gpts, ierr, dtype_mpi, &
+                          iGlo, iGhi, jGlo, jGhi
+      use mpi
+      implicit none
+      integer, dimension(1:NDIM) :: blk_extent
+      integer :: exch1, exch2
+
+      blk_extent(1) = iGhi - iGlo + 1
+      blk_extent(2) = jGhi - jGlo + 1
+
+      ! for top and bottom, ydir
+      call MPI_TYPE_CONTIGUOUS(blk_extent(1)*NVAR_NUMBER*Gpts, &
+                               MPI_DOUBLE, exch2, ierr)
+      call MPI_TYPE_COMMIT(exch2,ierr)
+
+      ! for left and right, xdir
+      CALL MPI_TYPE_VECTOR(blk_extent(2), NVAR_NUMBER*Gpts, &
+               NVAR_NUMBER*blk_extent(1), MPI_DOUBLE, exch1, ierr)
+      CALL MPI_TYPE_COMMIT(exch1, ierr)
+
+      dtype_mpi(1) = exch1
+      dtype_mpi(2) = exch2
+
+    end subroutine
 end module mpi_func

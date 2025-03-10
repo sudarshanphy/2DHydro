@@ -14,7 +14,7 @@ contains
     character(len=10) :: int_to_str, rank_to_str 
     real :: x, y
     
-    solnVar(ilo:,jlo:,1:) => mainVar(ilo:ihi,jlo:jhi,1:)
+    solnVar(1:,ilo:,jlo:) => mainVar(1:,ilo:ihi,jlo:jhi)
     solnVar(:,:,:) = 0.0
 
     ionum = 56 
@@ -37,7 +37,7 @@ contains
     
    do i = ilo, ihi
      do j = jlo, jhi
-         read(ionum, 12) x, y, solnVar(i,j,NVAR_BEGIN:NVAR_END)
+         read(ionum, 12) x, y, solnVar(NVAR_BEGIN:NVAR_END,i,j)
      end do
      read(ionum, *) linehash
    end do 

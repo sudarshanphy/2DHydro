@@ -26,7 +26,7 @@ contains
     call get_coords('x',ilo,ihi,x)
     call get_coords('y',jlo,jhi,y)
 
-    solnVar(ilo:,jlo:,1:) => mainVar(ilo:ihi,jlo:jhi,1:)    
+    solnVar(1:,ilo:,jlo:) => mainVar(1:,ilo:ihi,jlo:jhi)    
     solnVar(:,:,:) = 0.0
 
     select case (to_upper(trim(problem)))
@@ -40,16 +40,16 @@ contains
            jInt = j 
 
            ! initialize the fields
-           solnVar(i,j, DENS_VAR) = 1.0e0
-           solnVar(i,j, VELX_VAR) = 0.0e0
-           solnVar(i,j, VELY_VAR) = 0.0e0
-           solnVar(i,j, PRES_VAR) = 1.0e-1
+           solnVar(DENS_VAR, i,j) = 1.0e0
+           solnVar(VELX_VAR, i,j) = 0.0e0
+           solnVar(VELY_VAR, i,j) = 0.0e0
+           solnVar(PRES_VAR, i,j) = 1.0e-1
 
            ! add a region with very high pressure
            if (sqrt(x(iInt)**2 + y(jInt)**2) <= 0.1) then
-             solnVar(i,j,PRES_VAR) = 1.0e1
+             solnVar(PRES_VAR, i,j) = 1.0e1
            end if
-           call eos_gete(solnVar(i,j,:))
+           call eos_gete(solnVar(:,i,j))
         end do
       end do
     
@@ -62,13 +62,13 @@ contains
            jInt = j 
 
            ! initialize the fields
-           solnVar(i,j, DENS_VAR) = 1.0e0
-           solnVar(i,j, VELX_VAR) = 0.0e0
-           solnVar(i,j, VELY_VAR) = 0.0e0
-           solnVar(i,j, PRES_VAR) = 1.0e0
+           solnVar(DENS_VAR, i,j) = 1.0e0
+           solnVar(VELX_VAR, i,j) = 0.0e0
+           solnVar(VELY_VAR, i,j) = 0.0e0
+           solnVar(PRES_VAR, i,j) = 1.0e0
 
            !solnVar(i,j,ENER_VAR) = eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END))
-           call eos_gete(solnVar(i,j,:))
+           call eos_gete(solnVar(:,i,j))
         end do
       end do
 
@@ -82,24 +82,24 @@ contains
 
            ! initialize the fields
            if (abs(y(jInt) - 0.5) > 0.25) then
-             solnVar(i,j, DENS_VAR) = 1.0e0
-             solnVar(i,j, VELX_VAR) = -0.5e0
-             solnVar(i,j, VELY_VAR) = 0.0e0
-             solnVar(i,j, PRES_VAR) = 2.5e0
+             solnVar(DENS_VAR, i,j) = 1.0e0
+             solnVar(VELX_VAR, i,j) = -0.5e0
+             solnVar(VELY_VAR, i,j) = 0.0e0
+             solnVar(PRES_VAR, i,j) = 2.5e0
            else
-             solnVar(i,j, DENS_VAR) = 2.0e0
-             solnVar(i,j, VELX_VAR) = 0.5e0
-             solnVar(i,j, VELY_VAR) = 0.0e0
-             solnVar(i,j, PRES_VAR) = 2.5e0
+             solnVar(DENS_VAR, i,j) = 2.0e0
+             solnVar(VELX_VAR, i,j) = 0.5e0
+             solnVar(VELY_VAR, i,j) = 0.0e0
+             solnVar(PRES_VAR, i,j) = 2.5e0
            end if
            ! give velocity perturbations
            if (abs(y(jInt) - 0.25) < 0.1) then
-              solnVar(i,j, VELY_VAR) = 0.05 * sin(2.0 * 2.0 * PI * x(iInt))
+              solnVar(VELY_VAR, i,j) = 0.05 * sin(2.0 * 2.0 * PI * x(iInt))
            end if
            if (abs(y(jInt) - 0.75) < 0.1) then
-              solnVar(i,j, VELY_VAR) = 0.05 * sin(2.0 * 2.0 * PI * x(iInt))
+              solnVar(VELY_VAR, i,j) = 0.05 * sin(2.0 * 2.0 * PI * x(iInt))
            end if
-           call eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
+           call eos_gete(solnVar(:,i,j)) 
         end do
       end do
 
@@ -117,22 +117,22 @@ contains
 
            ! initialize the fields
            if (y(jInt) > 0.0) then
-             solnVar(i,j, DENS_VAR) = 2.0e0
-             solnVar(i,j, VELX_VAR) = -0.0e0
-             solnVar(i,j, VELY_VAR) = 0.0e0
-             solnVar(i,j, PRES_VAR) = 2.5e0 + grav * solnVar(i,j, DENS_VAR) * y(jInt)
+             solnVar(DENS_VAR, i,j) = 2.0e0
+             solnVar(VELX_VAR, i,j) = -0.0e0
+             solnVar(VELY_VAR, i,j) = 0.0e0
+             solnVar(PRES_VAR, i,j) = 2.5e0 + grav * solnVar(DENS_VAR, i,j) * y(jInt)
            else
-             solnVar(i,j, DENS_VAR) = 1.0e0
-             solnVar(i,j, VELX_VAR) = 0.0e0
-             solnVar(i,j, VELY_VAR) = 0.0e0
-             solnVar(i,j, PRES_VAR) = 2.5e0 + grav * solnVar(i,j, DENS_VAR) * y(jInt)
+             solnVar(DENS_VAR, i,j) = 1.0e0
+             solnVar(VELX_VAR, i,j) = 0.0e0
+             solnVar(VELY_VAR, i,j) = 0.0e0
+             solnVar(PRES_VAR, i,j) = 2.5e0 + grav * solnVar(DENS_VAR, i,j) * y(jInt)
            end if
 
            ! give velocity perturbation at the interface
-           solnVar(i,j,VELY_VAR) = 0.01 * (1.0 + cos(4.0 * PI * x(iInt))) &
+           solnVar(VELY_VAR, i,j) = 0.01 * (1.0 + cos(4.0 * PI * x(iInt))) &
                                * (1.0 + cos(3.0 * PI * y(jInt))) / 4.0
                              
-           call eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
+           call eos_gete(solnVar(:,i,j)) 
         end do
       end do
 
@@ -146,27 +146,27 @@ contains
 
            ! initialize the fields
            if ((x(iInt) <= 0.8) .and. (y(jInt) <= 0.8)) then
-             solnVar(i,j, DENS_VAR) = 0.138e0
-             solnVar(i,j, VELX_VAR) = 1.206e0
-             solnVar(i,j, VELY_VAR) = 1.206e0
-             solnVar(i,j, PRES_VAR) = 0.029e0
+             solnVar(DENS_VAR, i,j) = 0.138e0
+             solnVar(VELX_VAR, i,j) = 1.206e0
+             solnVar(VELY_VAR, i,j) = 1.206e0
+             solnVar(PRES_VAR, i,j) = 0.029e0
            else if ((x(iInt) <= 0.8) .and. (y(jInt) > 0.8)) then
-             solnVar(i,j, DENS_VAR) = 0.5323e0
-             solnVar(i,j, VELX_VAR) = 1.206e0
-             solnVar(i,j, VELY_VAR) = 0.0e0
-             solnVar(i,j, PRES_VAR) = 0.3e0
+             solnVar(DENS_VAR, i,j) = 0.5323e0
+             solnVar(VELX_VAR, i,j) = 1.206e0
+             solnVar(VELY_VAR, i,j) = 0.0e0
+             solnVar(PRES_VAR, i,j) = 0.3e0
            else if ((x(iInt) > 0.8) .and. (y(jInt) <= 0.8)) then
-             solnVar(i,j, DENS_VAR) = 0.5323e0
-             solnVar(i,j, VELX_VAR) = 0.0e0
-             solnVar(i,j, VELY_VAR) = 1.206e0
-             solnVar(i,j, PRES_VAR) = 0.3e0
+             solnVar(DENS_VAR, i,j) = 0.5323e0
+             solnVar(VELX_VAR, i,j) = 0.0e0
+             solnVar(VELY_VAR, i,j) = 1.206e0
+             solnVar(PRES_VAR, i,j) = 0.3e0
            else
-             solnVar(i,j, DENS_VAR) = 1.5e0
-             solnVar(i,j, VELX_VAR) = 0.0e0
-             solnVar(i,j, VELY_VAR) = 0.0e0
-             solnVar(i,j, PRES_VAR) = 1.5e0
+             solnVar(DENS_VAR, i,j) = 1.5e0
+             solnVar(VELX_VAR, i,j) = 0.0e0
+             solnVar(VELY_VAR, i,j) = 0.0e0
+             solnVar(PRES_VAR, i,j) = 1.5e0
            end if
-           call eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
+           call eos_gete(solnVar(:,i,j)) 
         end do
       end do
 
@@ -177,15 +177,15 @@ contains
            ! shift to interior index
            iInt = i 
            jInt = j 
-           solnVar(i,j, DENS_VAR) = gamma**2
-           solnVar(i,j, VELX_VAR) = -sin(y(j))
-           solnVar(i,j, VELY_VAR) = sin(x(i))
-           solnVar(i,j, PRES_VAR) = gamma
+           solnVar(DENS_VAR, i,j) = gamma**2
+           solnVar(VELX_VAR, i,j) = -sin(y(j))
+           solnVar(VELY_VAR, i,j) = sin(x(i))
+           solnVar(PRES_VAR, i,j) = gamma
 #ifdef MHD
-           solnVar(i,j, BMFX_VAR) = -sin(y(j))
-           solnVar(i,j, BMFY_VAR) = sin(2.0*x(i))
+           solnVar(BMFX_VAR, i,j) = -sin(y(j))
+           solnVar(BMFY_VAR, i,j) = sin(2.0*x(i))
 #endif 
-           call eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
+           call eos_gete(solnVar(:,i,j)) 
         end do
       end do
 
@@ -201,28 +201,61 @@ contains
            jInt = j 
            r = sqrt((x(iInt) - 0.5)**2 + (y(jInt) - 0.5)**2)
            if (r < 0.1) then
-             solnVar(i,j, DENS_VAR) = 10.0
-             solnVar(i,j, VELX_VAR) = 10.0 * (0.5 - y(jInt)) 
-             solnVar(i,j, VELY_VAR) = 10.0 * (x(iInt) - 0.5)
+             solnVar(DENS_VAR, i,j) = 10.0
+             solnVar(VELX_VAR, i,j) = 10.0 * (0.5 - y(jInt)) 
+             solnVar(VELY_VAR, i,j) = 10.0 * (x(iInt) - 0.5)
            else if (r > 0.115) then
-             solnVar(i,j, DENS_VAR) = 1.0
-             solnVar(i,j, VELX_VAR) = 0.0
-             solnVar(i,j, VELY_VAR) = 0.0
+             solnVar(DENS_VAR, i,j) = 1.0
+             solnVar(VELX_VAR, i,j) = 0.0
+             solnVar(VELY_VAR, i,j) = 0.0
            else
-             solnVar(i,j, DENS_VAR) = 1.0 + 9.0 * (0.115 - r)/(r - 0.1)
-             solnVar(i,j, VELX_VAR) =  100.0 * (0.115 - r)/(r - 0.1) * (0.5 - y(jInt)) &
-                                       / solnVar(i,j, DENS_VAR)
-             solnVar(i,j, VELY_VAR) =  100.0 * (0.115 - r)/(r - 0.1) * (x(iInt) - 0.5) &
-                                       / solnVar(i,j, DENS_VAR)
+             solnVar(DENS_VAR, i,j) = 1.0 + 9.0 * (0.115 - r)/(r - 0.1)
+             solnVar(VELX_VAR, i,j) =  100.0 * (0.115 - r)/(r - 0.1) * (0.5 - y(jInt)) &
+                                       / solnVar(DENS_VAR, i,j)
+             solnVar(VELY_VAR, i,j) =  100.0 * (0.115 - r)/(r - 0.1) * (x(iInt) - 0.5) &
+                                       / solnVar(DENS_VAR, i,j)
              ! need this to make sure density doen't blow up at initialization
-             solnVar(i,j,DENS_VAR) = min(solnVar(i,j,DENS_VAR), 10.0)
+             solnVar(DENS_VAR, i,j) = min(solnVar(DENS_VAR, i,j), 10.0)
            end if
-           solnVar(i,j, PRES_VAR) = 0.5
-#ifdef MHD
-           solnVar(i,j, BMFX_VAR) = 2.5 / sqrt(4.0 * PI)
-           solnVar(i,j, BMFY_VAR) = 0.0
+           solnVar(PRES_VAR, i,j) = 0.5
+#ifdef MHD                   
+           solnVar(BMFX_VAR, i,j) = 2.5 / sqrt(4.0 * PI)
+           solnVar(BMFY_VAR, i,j) = 0.0
 #endif
-           call eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END)) 
+           call eos_gete(solnVar(:,i,j)) 
+        end do
+      end do
+    case ("MPICHECK")
+      print *, "2D Riemann problem selected"
+      do j = jlo, jhi
+        do i = ilo, ihi
+           ! shift to interior index
+           iInt = i 
+           jInt = j 
+
+           ! initialize the fields
+           if ((x(iInt) <= 0.5) .and. (y(jInt) <= 0.5)) then
+             solnVar(DENS_VAR, i,j) = 1.0
+             solnVar(VELX_VAR, i,j) = 0.0
+             solnVar(VELY_VAR, i,j) = 0.0
+             solnVar(PRES_VAR, i,j) = 1.0
+           else if ((x(iInt) <= 0.5) .and. (y(jInt) > 0.5)) then
+             solnVar(DENS_VAR, i,j) = 3.0
+             solnVar(VELX_VAR, i,j) = 0
+             solnVar(VELY_VAR, i,j) = 0
+             solnVar(PRES_VAR, i,j) = 1.0
+           else if ((x(iInt) > 0.5) .and. (y(jInt) <= 0.5)) then
+             solnVar(DENS_VAR, i,j) = 2.0
+             solnVar(VELX_VAR, i,j) = 0
+             solnVar(VELY_VAR, i,j) = 0
+             solnVar(PRES_VAR, i,j) = 1.0
+           else
+             solnVar(DENS_VAR, i,j) = 4.0
+             solnVar(VELX_VAR, i,j) = 0
+             solnVar(VELY_VAR, i,j) = 0
+             solnVar(PRES_VAR, i,j) = 1.0
+           end if
+           call eos_gete(solnVar(:,i,j)) 
         end do
       end do
     case default

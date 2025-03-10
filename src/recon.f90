@@ -177,7 +177,7 @@ contains
         implicit none
         real, intent(in) :: dt
         real, pointer :: solnVar(:,:,:)
-        real, dimension(iGlo:iGhi,jGlo:jGhi,NCONSVAR_NUMBER), intent(out) :: x_plus, x_minus, y_plus, y_minus
+        real, dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(out) :: x_plus, x_minus, y_plus, y_minus
         
         integer :: i, j, n
 
@@ -191,10 +191,10 @@ contains
             do n = 1, NCONSVAR_NUMBER
                do j = jlo-1, jhi+1
                    do i = ilo-1, ihi+1
-                      call get_facevalue_weno(solnVar(i - 1: i + 1, j,n), &
-                                          x_plus(i, j,n), x_minus(i, j,n))
-                      call get_facevalue_weno(solnVar(i, j - 1: j + 1,n), &
-                                          y_plus(i, j,n), y_minus(i, j,n))
+                      call get_facevalue_weno(solnVar(n,i - 1: i + 1, j), &
+                                          x_plus(n,i, j), x_minus(n,i, j))
+                      call get_facevalue_weno(solnVar(n,i, j - 1: j + 1), &
+                                          y_plus(n,i, j), y_minus(n,i, j))
                    end do
                 end do
             end do
@@ -202,10 +202,10 @@ contains
             do n = 1, NCONSVAR_NUMBER
                do j = jlo-1, jhi+1
                    do i = ilo-1, ihi+1
-                       call get_facevalue_weno5z(solnVar(i - 2: i + 2, j,n), &
-                                           x_plus(i, j,n), x_minus(i, j,n))
-                       call get_facevalue_weno5z(solnVar(i, j - 2: j + 2,n), &
-                                           y_plus(i, j,n), y_minus(i, j,n))
+                       call get_facevalue_weno5z(solnVar(n,i - 2: i + 2, j), &
+                                           x_plus(n,i, j), x_minus(n,i, j))
+                       call get_facevalue_weno5z(solnVar(n,i, j - 2: j + 2), &
+                                           y_plus(n,i, j), y_minus(n,i, j))
                     end do
                 end do
             end do

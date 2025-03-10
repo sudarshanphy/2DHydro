@@ -45,31 +45,31 @@ contains
       real :: max_xsmax, max_ysmax 
       real, pointer :: solnVar(:,:,:)
 
-      solnVar(iGlo:,jGlo:,1:) => mainVar(:,:,:)
+      solnVar(1:,iGlo:,jGlo:) => mainVar(:,:,:)
 
       do j = jGlo, jGhi
         do i = iGlo, iGhi
-           cs = sqrt(gamma * solnVar(i,j,PRES_VAR) / solnVar(i,j,DENS_VAR))
+           cs = sqrt(gamma * solnVar(PRES_VAR,i,j) / solnVar(DENS_VAR,i,j))
 
            if (cs < 0.0) then
              print *, "Imaginary sound speed!"
              print *, "At i,j, with gamma, pres, dens = ", i, j, gamma, &
-                           solnVar(i,j,PRES_VAR), solnVar(i,j,DENS_VAR)
+                           solnVar(PRES_VAR,i,j), solnVar(DENS_VAR,i,j)
            endif
            xcmax = cs
            ycmax = cs
 #ifdef MHD
-           cax = solnVar(i,j,BMFX_VAR) / sqrt(solnVar(i,j,DENS_VAR))
-           cay = solnVar(i,j,BMFY_VAR) / sqrt(solnVar(i,j,DENS_VAR))
-           B2 =  sum(solnVar(i,j,BMFX_VAR:BMFZ_VAR)*solnVar(i,j,BMFX_VAR:BMFZ_VAR))
-           cB2 = B2 / solnVar(i,j,DENS_VAR)
+           cax = solnVar(BMFX_VAR,i,j) / sqrt(solnVar(DENS_VAR,i,j))
+           cay = solnVar(BMFY_VAR,i,j) / sqrt(solnVar(DENS_VAR,i,j))
+           B2 =  sum(solnVar(BMFX_VAR:BMFZ_VAR,i,j)*solnVar(BMFX_VAR:BMFZ_VAR,i,j))
+           cB2 = B2 / solnVar(DENS_VAR,i,j)
            cfx = sqrt(0.5 * ((cs + cB2) + sqrt((cs + cB2)**2 - 4.0 * cs * cax * cax)))
            cfy = sqrt(0.5 * ((cs + cB2) + sqrt((cs + cB2)**2 - 4.0 * cs * cay * cay)))
            xcmax = cfx
            xcmax = cfy
 #endif
-           xsmax(i,j) = xcmax + abs(solnVar(i,j,VELX_VAR))
-           ysmax(i,j) = ycmax + abs(solnVar(i,j,VELY_VAR))
+           xsmax(i,j) = xcmax + abs(solnVar(VELX_VAR,i,j))
+           ysmax(i,j) = ycmax + abs(solnVar(VELY_VAR,i,j))
         end do
       end do
        

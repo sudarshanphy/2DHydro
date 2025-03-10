@@ -22,16 +22,16 @@ contains
        real, pointer :: solnVar(:,:,:)
        real(8), intent(in) :: dt
 
-       real(8), dimension(iGlo:iGhi, jGlo:jGhi, NCONSVAR_NUMBER) :: U, Up1
-       real(8), dimension(iGlo:iGhi,jGlo:jGhi, NCONSVAR_NUMBER) :: x_plus, x_minus, y_plus, y_minus
-   
-       real(8), dimension(iGlo:iGhi, jGlo:jGhi, NCONSVAR_NUMBER) :: xF, yF
+       real(8), dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: U, Up1
+       real(8), dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: x_plus, x_minus, y_plus, y_minus
+                                           
+       real(8), dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: xF, yF
        real(8), dimension(NCONSVAR_NUMBER) :: Uleft, Uright, Vleft, Vright
        real(8), dimension(NCONSVAR_NUMBER) :: sgrav, sterm
 
        integer :: i, j, k, l, m, n
        
-       solnVar(iGlo:,jGlo:,1:) => mainVar(:,:,1:)
+       solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
 
        sterm(:) = 0.0
        if (usegrav) then
@@ -42,21 +42,21 @@ contains
 
        do j = jGlo, jGhi
          do i = iGlo, iGhi
-           Up1(i,j,DENS_CONS) = solnVar(i,j,DENS_VAR) 
-           Up1(i,j,MOMX_CONS:MOMZ_CONS) = solnVar(i,j,DENS_VAR) * solnVar(i,j,VELX_VAR:VELZ_VAR)
-           Up1(i,j,ENER_CONS) = solnVar(i,j,ENER_VAR)
+           Up1(DENS_CONS,i,j) = solnVar(DENS_VAR,i,j) 
+           Up1(MOMX_CONS:MOMZ_CONS,i,j) = solnVar(DENS_VAR,i,j) * solnVar(VELX_VAR:VELZ_VAR,i,j)
+           Up1(ENER_CONS,i,j) = solnVar(ENER_VAR,i,j)
 
 #ifdef MHD
-           Up1(i,j,BMFX_CONS:BMFZ_CONS) = solnVar(i,j,BMFX_VAR:BMFZ_VAR)
-           Up1(i,j,BPSI_CONS) = solnVar(i,j,BPSI_VAR)
+           Up1(BMFX_CONS:BMFZ_CONS,i,j) = solnVar(BMFX_VAR:BMFZ_VAR,i,j)
+           Up1(BPSI_CONS,i,j) = solnVar(BPSI_VAR,i,j)
 #endif
-           U(i,j,DENS_CONS) = solnVar(i,j,DENS_VAR) 
-           U(i,j,MOMX_CONS:MOMZ_CONS) = solnVar(i,j,DENS_VAR) * solnVar(i,j,VELX_VAR:VELZ_VAR)
-           U(i,j,ENER_CONS) = solnVar(i,j,ENER_VAR)
+           U(DENS_CONS,i,j) = solnVar(DENS_VAR,i,j) 
+           U(MOMX_CONS:MOMZ_CONS,i,j) = solnVar(DENS_VAR,i,j) * solnVar(VELX_VAR:VELZ_VAR,i,j)
+           U(ENER_CONS,i,j) = solnVar(ENER_VAR,i,j)
 
 #ifdef MHD
-           U(i,j,BMFX_CONS:BMFZ_CONS) = solnVar(i,j,BMFX_VAR:BMFZ_VAR)
-           U(i,j,BPSI_CONS) = solnVar(i,j,BPSI_VAR)
+           U(BMFX_CONS:BMFZ_CONS,i,j) = solnVar(BMFX_VAR:BMFZ_VAR,i,j)
+           U(BPSI_CONS,i,j) = solnVar(BPSI_VAR,i,j)
 #endif
          end do
        end do
@@ -65,7 +65,7 @@ contains
        ! rk2 has 2 steps
        do k = 1, 2
          ! use the updated solution for the next step
-         solnVar(iGlo:,jGlo:,1:) => mainVar(:,:,1:)
+         solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
 
          call recon_getcellfaces(dt, solnVar, &
                                  x_plus, x_minus, y_plus, y_minus)
@@ -74,27 +74,27 @@ contains
             do i = ilo, ihi + 1
 
                do n = 1, NCONSVAR_NUMBER
-                 Uleft(n) = x_plus(i-1,j,n)
-                 Uright(n) = x_minus(i,j,n)
-                 Vleft(n) = y_plus(i,j-1,n)
-                 Vright(n) = y_minus(i,j,n)
+                 Uleft(n) = x_plus(n,i-1,j)
+                 Uright(n) = x_minus(n,i,j)
+                 Vleft(n) = y_plus(n,i,j-1)
+                 Vright(n) = y_minus(n,i,j)
                end do
 
               if (to_upper(trim(flux_solver)) == "HLLC") then
 #ifndef MHD
-                call hllc(Uleft, Uright, "x", xF(i,j,:))
-                call hllc(Vleft, Vright, "y", yF(i,j,:))
+                call hllc(Uleft, Uright, "x", xF(:,i,j))
+                call hllc(Vleft, Vright, "y", yF(:,i,j))
 #else
                 print *, "HLLC is only for pure Hydro simulation"
                 stop
 #endif
               else if (to_upper(trim(flux_solver)) == "HLLE") then
-                call hlle(Uleft, Uright, "x", xF(i,j,:))
-                call hlle(Vleft, Vright, "y", yF(i,j,:))
+                call hlle(Uleft, Uright, "x", xF(:,i,j))
+                call hlle(Vleft, Vright, "y", yF(:,i,j))
               else if (to_upper(trim(flux_solver)) == "HLLD") then
 #ifdef MHD
-                call hlld(Uleft, Uright, "x", xF(i,j,:))
-                call hlld(Vleft, Vright, "y", yF(i,j,:))
+                call hlld(Uleft, Uright, "x", xF(:,i,j))
+                call hlld(Vleft, Vright, "y", yF(:,i,j))
 #else
                 print *, "HLLD is only for MHD simulation"
                 stop
@@ -113,25 +113,25 @@ contains
           do j=jlo, jhi
             do i = ilo, ihi
 #ifdef MHD
-               sgrav = sterm * (/1.0e0, 0.0, Up1(i,j,DENS_CONS), 0.0, Up1(i,j,MOMY_CONS), &
+               sgrav = sterm * (/1.0e0, 0.0, Up1(DENS_CONS,i,j), 0.0, Up1(MOMY_CONS,i,j), &
                                  0.0,0.0,0.0,0.0/)
 #else
-               sgrav = sterm * (/1.0e0, 0.0, Up1(i,j,DENS_CONS), 0.0, Up1(i,j,MOMY_CONS)/)
+               sgrav = sterm * (/1.0e0, 0.0, Up1(DENS_CONS,i,j), 0.0, Up1(MOMY_CONS,i,j)/)
 #endif
-               Up1(i,j,:) = Up1(i,j,:) &
-                            + (dt/dx) * (xF(i,j,:) - xF(i+1,j,:)) &
-                            + (dt/dy) * (yF(i,j,:) - yF(i,j+1,:)) &
+               Up1(:,i,j) = Up1(:,i,j) &
+                            + (dt/dx) * (xF(:,i,j) - xF(:,i+1,j)) &
+                            + (dt/dy) * (yF(:,i,j) - yF(:,i,j+1)) &
                             + dt * sgrav(:)
 
                ! get primitive quantities
-               solnVar(i,j,DENS_VAR) = Up1(i,j,DENS_CONS)
-               solnVar(i,j,VELX_VAR:VELZ_VAR) = Up1(i,j,MOMX_CONS:MOMZ_CONS)/Up1(i,j,DENS_CONS)
-               solnVar(i,j,ENER_VAR) = Up1(i,j,ENER_CONS)
+               solnVar(DENS_VAR,i,j) = Up1(DENS_CONS,i,j)
+               solnVar(VELX_VAR:VELZ_VAR,i,j) = Up1(MOMX_CONS:MOMZ_CONS,i,j)/Up1(DENS_CONS,i,j)
+               solnVar(ENER_VAR,i,j) = Up1(ENER_CONS,i,j)
 #ifdef MHD                        
-               solnVar(i,j,BMFX_VAR:BMFZ_VAR) = Up1(i,j,BMFX_CONS:BMFZ_CONS) 
-               solnVar(i,j,BPSI_VAR) = Up1(i,j,BPSI_CONS)
+               solnVar(BMFX_VAR:BMFZ_VAR,i,j) = Up1(BMFX_CONS:BMFZ_CONS,i,j) 
+               solnVar(BPSI_VAR,i,j) = Up1(BPSI_CONS,i,j)
 #endif
-               call eos_getp(solnVar(i,j,:))
+               call eos_getp(solnVar(:,i,j))
             end do
           end do
           nullify(solnVar)
@@ -140,21 +140,21 @@ contains
 
        end do ! rk step loop
        
-       solnVar(iGlo:,jGlo:,1:) => mainVar(:,:,1:)
+       solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
 
        do j=jGlo, jGhi
          do i = iGlo, iGhi
-           Up1(i,j,:) = 0.5e0 * (U(i,j,:) + Up1(i,j,:))
+           Up1(:,i,j) = 0.5e0 * (U(:,i,j) + Up1(:,i,j))
 
            ! get primitive quantities
-           solnVar(i,j,DENS_VAR) = Up1(i,j,DENS_CONS)
-           solnVar(i,j,VELX_VAR:VELZ_VAR) = Up1(i,j,MOMX_CONS:MOMZ_CONS)/Up1(i,j,DENS_CONS)
-           solnVar(i,j,ENER_VAR) = Up1(i,j,ENER_CONS)
+           solnVar(DENS_VAR,i,j) = Up1(DENS_CONS,i,j)
+           solnVar(VELX_VAR:VELZ_VAR,i,j) = Up1(MOMX_CONS:MOMZ_CONS,i,j)/Up1(DENS_CONS,i,j)
+           solnVar(ENER_VAR,i,j) = Up1(ENER_CONS,i,j)
 #ifdef MHD                    
-           solnVar(i,j,BMFX_VAR:BMFZ_VAR) = Up1(i,j,BMFX_CONS:BMFZ_CONS) 
-           solnVar(i,j,BPSI_VAR) = Up1(i,j,BPSI_CONS)
+           solnVar(BMFX_VAR:BMFZ_VAR,i,j) = Up1(BMFX_CONS:BMFZ_CONS,i,j) 
+           solnVar(BPSI_VAR,i,j) = Up1(BPSI_CONS,i,j)
 #endif
-           call eos_getp(solnVar(i,j,:))
+           call eos_getp(solnVar(:,i,j))
 
          end do
        end do

@@ -27,7 +27,7 @@ contains
   call get_coords('x',ilo,ihi,x)
   call get_coords('y',jlo,jhi,y)
 
-  solnVar(ilo:,jlo:,1:) => mainVar(ilo:ihi, jlo:jhi, 1:)
+  solnVar(1:,ilo:,jlo:) => mainVar(1:,ilo:ihi, jlo:jhi)
   ionum = 100
   
 12   format (1x, 50(es25.18, :, 1x))
@@ -57,7 +57,7 @@ contains
 #endif
   do i = ilo, ihi
      do j = jlo, jhi
-        write(ionum, 12) x(i), y(j), solnVar(i,j,:)
+        write(ionum, 12) x(i), y(j), solnVar(:,i,j)
      end do
      write(ionum, *) "####"
   end do

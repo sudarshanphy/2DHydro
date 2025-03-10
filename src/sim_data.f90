@@ -1,4 +1,5 @@
 module sim_data
+#include "param.h"
   use mpi
   implicit none
   real, save :: xmin, xmax, ymin, ymax, dx, dy
@@ -32,4 +33,6 @@ module sim_data
   ! blocks to the left, right, top, bottom
   integer, save :: l_blk, r_blk, t_blk, b_blk
   logical, save :: at_xlboundary, at_ylboundary, at_xrboundary, at_yrboundary
+
+  integer, save, dimension(1:NDIM) :: dtype_mpi
 end module sim_data

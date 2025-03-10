@@ -57,10 +57,12 @@ module grid_func
     lymin = ymin + (jlo - 1) * dx
     lymax = ymin + jhi * dx
   
-    allocate(mainVar(iGlo:iGhi, jGlo:jGhi, NVAR_NUMBER))
+    allocate(mainVar(NVAR_NUMBER, iGlo:iGhi, jGlo:jGhi))
  
-    !print *, "myrank, xl, xr, yl, yr = ", myrank, at_xlboundary, at_xrboundary, &
-    !                                              at_ylboundary, at_yrboundary 
+    print *, "myrank, xl, xr, yl, yr = ", myrank, at_xlboundary, at_xrboundary, &
+                                                  at_ylboundary, at_yrboundary 
+    print *, "myrank, ilo, ihi, jlo, jhi = ", myrank, ilo, ihi, jlo, jhi
+
   end subroutine grid_init
 
 

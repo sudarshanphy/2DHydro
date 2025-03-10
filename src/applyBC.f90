@@ -140,11 +140,9 @@ contains
 
     if (at_xlboundary) then 
        do n=NVAR_BEGIN, NVAR_NUMBER
-          q(iGlo:,jGlo:) => mainVar(:,:,n)
+          q(iGlo:,jGlo:) => mainVar(n,:,:)
           if (n == VELX_VAR) then
             call applyBC(q,"x","L", .true.)
-          else if (n == VELY_VAR) then
-            call applyBC(q,"x","L")
           else
             call applyBC(q,"x","L")
          end if
@@ -154,11 +152,9 @@ contains
 
     if (at_xrboundary) then 
        do n=NVAR_BEGIN, NVAR_NUMBER
-          q(iGlo:,jGlo:) => mainVar(:,:,n)
+          q(iGlo:,jGlo:) => mainVar(n,:,:)
           if (n == VELX_VAR) then
             call applyBC(q,"x","R", .true.)
-          else if (n == VELY_VAR) then
-            call applyBC(q,"x","R")
           else
             call applyBC(q,"x","R")
          end if
@@ -168,10 +164,8 @@ contains
 
     if (at_ylboundary) then 
        do n=NVAR_BEGIN, NVAR_NUMBER
-          q(iGlo:,jGlo:) => mainVar(:,:,n)
-          if (n == VELX_VAR) then
-            call applyBC(q,"y","L")
-          else if (n == VELY_VAR) then
+          q(iGlo:,jGlo:) => mainVar(n,:,:)
+          if (n == VELY_VAR) then
             call applyBC(q,"y","L", .true.)
           else
             call applyBC(q,"y","L")
@@ -182,10 +176,8 @@ contains
     
     if (at_yrboundary) then 
        do n=NVAR_BEGIN, NVAR_NUMBER
-          q(iGlo:,jGlo:) => mainVar(:,:,n)
-          if (n == VELX_VAR) then
-            call applyBC(q,"y","R")
-          else if (n == VELY_VAR) then
+          q(iGlo:,jGlo:) => mainVar(n,:,:)
+          if (n == VELY_VAR) then
             call applyBC(q,"y","R", .true.)
           else
             call applyBC(q,"y","R")
