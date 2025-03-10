@@ -2,7 +2,7 @@ program hydro
 #include "param.h"
 
   use sim_data
-  use grid_func, only: grid_init, get_coords
+  use grid_func
   use sim_init, only: init_problem
   use sim_restart, only: restart_problem
   use io_module, only: write_output
@@ -109,6 +109,7 @@ program hydro
       outputno = outputno + 1
       call write_output(time, step, outputno)
       if (myrank == MASTER_PROC) then
+        print *, "$$$ output basenm = ", trim(basenm)
         print *, "$$$ Step: ", step," || time = ", time, " || output # = ", outputno," $$$" 
       end if
       call CPU_TIME(timer_start)
@@ -122,6 +123,6 @@ program hydro
   end do
 
 
-  deallocate(mainVar)
+  call grid_finalize()
   call finalize_procs()
 end program hydro

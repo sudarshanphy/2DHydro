@@ -59,12 +59,18 @@ module grid_func
   
     allocate(mainVar(NVAR_NUMBER, iGlo:iGhi, jGlo:jGhi))
  
-    print *, "myrank, xl, xr, yl, yr = ", myrank, at_xlboundary, at_xrboundary, &
-                                                  at_ylboundary, at_yrboundary 
-    print *, "myrank, ilo, ihi, jlo, jhi = ", myrank, ilo, ihi, jlo, jhi
+    !print *, "myrank, xl, xr, yl, yr = ", myrank, at_xlboundary, at_xrboundary, &
+    !                                              at_ylboundary, at_yrboundary 
+    !print *, "myrank, ilo, ihi, jlo, jhi = ", myrank, ilo, ihi, jlo, jhi
 
   end subroutine grid_init
 
+  subroutine grid_finalize()
+    use sim_data, only: mainVar
+    implicit none
+
+    deallocate(mainVar)
+  end subroutine
 
   subroutine get_coords(Dir,lo,hi,array)
     use sim_data, only: xmin, ymin, dx, dy

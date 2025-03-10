@@ -24,10 +24,10 @@ contains
       !BC in X-direction
       case ('X')
         if (to_upper(trim(xlbctype)) == "PERIODIC") then
-          do ii  = 1, Gpts
-            ! lower face
-            !q(ii, :) = q(iGhi-2*Gpts+ii, :)
-          end do
+          !do ii  = 1, Gpts
+          !  ! lower face
+          !  !q(ii, :) = q(iGhi-2*Gpts+ii, :)
+          !end do
 
         else if (to_upper(trim(xlbctype)) == "FLOW") then
           do ii  = 1, Gpts
@@ -47,10 +47,10 @@ contains
       ! BC in Y-direction  
       case ('Y')
         if (to_upper(trim(ylbctype)) == "PERIODIC") then
-          do ii  = 1, Gpts
-            ! lower face
-            !q(:, ii) = q(:, yTpts-2*Gpts+ii)
-          end do
+          !do ii  = 1, Gpts
+          !  ! lower face
+          !  !q(:, ii) = q(:, yTpts-2*Gpts+ii)
+          !end do
 
         else if (to_upper(trim(ylbctype)) == "FLOW") then
           do ii  = 1, Gpts
@@ -78,10 +78,10 @@ contains
       ! BC in X-direction
       case ('X')
         if (to_upper(trim(xrbctype)) == "PERIODIC") then
-          do ii  = 1, Gpts
-            ! upper face
-            !q(iGhi-Gpts+ii, :) = q(Gpts + ii, :)
-          end do
+          !do ii  = 1, Gpts
+          !  ! upper face
+          !  !q(iGhi-Gpts+ii, :) = q(Gpts + ii, :)
+          !end do
 
         else if (to_upper(trim(xrbctype)) == "FLOW") then
           do ii  = 1, Gpts
@@ -101,10 +101,10 @@ contains
       ! BC in Y-direction
       case ('Y')
         if (to_upper(trim(yrbctype)) == "PERIODIC") then
-          do ii  = 1, Gpts
-            ! upper face
-            !q(:, yTpts-Gpts+ii) = q(:, Gpts + ii)
-          end do
+          !do ii  = 1, Gpts
+          !  ! upper face
+          !  !q(:, yTpts-Gpts+ii) = q(:, Gpts + ii)
+          !end do
 
         else if (to_upper(trim(yrbctype)) == "FLOW") then
           do ii  = 1, Gpts
@@ -137,6 +137,9 @@ contains
     implicit none
     real, pointer :: q(:,:)
     integer :: n
+    
+    ! Periodic BC is already applied in the guardcell_fill routine
+    ! applyBC_all should always be called after guardcell_fill routine
 
     if (at_xlboundary) then 
        do n=NVAR_BEGIN, NVAR_NUMBER

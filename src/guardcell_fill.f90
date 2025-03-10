@@ -16,10 +16,12 @@ module guard_func
     integer :: tag1 = 20, tag2 = 21, tag3 = 23, tag4 = 24
     integer :: ii
   
-    l_blk = merge(MPI_PROC_NULL, myrank - 1, at_xlboundary)
-    r_blk = merge(MPI_PROC_NULL, myrank + 1, at_xrboundary)
-    t_blk = merge(MPI_PROC_NULL, myrank + xblk, at_yrboundary)
-    b_blk = merge(MPI_PROC_NULL, myrank - xblk, at_ylboundary)
+    ! determine the neighbouring ranks
+    ! if at the boundary, apply periodic BC 
+    l_blk = merge(myrank+(xblk-1), myrank - 1, at_xlboundary)
+    r_blk = merge(myrank-(xblk-1), myrank + 1, at_xrboundary)
+    t_blk = merge(myrank-(xblk*(yblk-1)), myrank + xblk, at_yrboundary)
+    b_blk = merge(myrank+(xblk*(yblk-1)), myrank - xblk, at_ylboundary)
   
     ! ---- X-direction communication ----
     ! send data to left, recv from right
