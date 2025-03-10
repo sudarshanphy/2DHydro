@@ -56,8 +56,8 @@ contains
 #else
   write(ionum, *) "# xcenter ycenter dens velx vely velz pres ener"
 #endif
-  do i = iGlo, iGhi
-     do j = jGlo, jGhi
+  do i = ilo, ihi
+     do j = jlo, jhi
         write(ionum, 12) x(i), y(j), solnVar(:,i,j)
      end do
      write(ionum, *) "####"

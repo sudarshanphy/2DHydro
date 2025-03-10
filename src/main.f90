@@ -89,8 +89,6 @@ program hydro
 #endif 
     ! do a SSP RK2 step
     call RK2_SSP(dt)
-    ! apply BC
-    ! call applyBC_all()
 
     time = time + dt
     step = step + 1

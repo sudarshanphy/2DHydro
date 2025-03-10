@@ -1,3 +1,7 @@
+'''
+This script was used fir debuggin guardcell communications.
+Plots data from a block.
+'''
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -11,7 +15,7 @@ mpl.rcParams['font.size'] = 20.0
 
 #num = int(sys.argv[1])
 num = 1
-fname = "./output/rotormhd_test_y2_3_0001_%04d.dat"%(num)
+fname = "./output/rotormhd_test_x2_y2_0001_%04d.dat"%(num)
 fieldname = "pres"
 
 f = open(fname, "r")

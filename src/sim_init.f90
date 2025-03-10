@@ -225,39 +225,6 @@ contains
            call eos_gete(solnVar(:,i,j)) 
         end do
       end do
-    case ("MPICHECK")
-      print *, "2D Riemann problem selected"
-      do j = jlo, jhi
-        do i = ilo, ihi
-           ! shift to interior index
-           iInt = i 
-           jInt = j 
-
-           ! initialize the fields
-           if ((x(iInt) <= 0.5) .and. (y(jInt) <= 0.5)) then
-             solnVar(DENS_VAR, i,j) = 1.0
-             solnVar(VELX_VAR, i,j) = 0.0
-             solnVar(VELY_VAR, i,j) = 0.0
-             solnVar(PRES_VAR, i,j) = 1.0
-           else if ((x(iInt) <= 0.5) .and. (y(jInt) > 0.5)) then
-             solnVar(DENS_VAR, i,j) = 3.0
-             solnVar(VELX_VAR, i,j) = 0
-             solnVar(VELY_VAR, i,j) = 0
-             solnVar(PRES_VAR, i,j) = 1.0
-           else if ((x(iInt) > 0.5) .and. (y(jInt) <= 0.5)) then
-             solnVar(DENS_VAR, i,j) = 2.0
-             solnVar(VELX_VAR, i,j) = 0
-             solnVar(VELY_VAR, i,j) = 0
-             solnVar(PRES_VAR, i,j) = 1.0
-           else
-             solnVar(DENS_VAR, i,j) = 4.0
-             solnVar(VELX_VAR, i,j) = 0
-             solnVar(VELY_VAR, i,j) = 0
-             solnVar(PRES_VAR, i,j) = 1.0
-           end if
-           call eos_gete(solnVar(:,i,j)) 
-        end do
-      end do
     case default
       print *, "such problem not defined"
     end select

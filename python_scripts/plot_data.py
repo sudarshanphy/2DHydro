@@ -1,7 +1,15 @@
+'''
+03/09/2025
+Sudarshan Neopane
+This script is to plot result from a serial run.
+For a serial run, filename: basenm_0000_%04d.dat
+'''
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import sys
+from matplotlib.widgets import Slider, Button, TextBox
 
 mpl.rcParams['lines.linewidth'] = 3
 mpl.rcParams['font.family'] = 'DeJavu Serif'
@@ -21,9 +29,9 @@ f.close()
 
 time = float(lines[0].split()[2])
 step = float(lines[0].split()[-1])
-nx = int(lines[1].split()[2])
+nx = int(lines[1].split()[2]) 
 dx = float(lines[1].split()[-1])
-ny = int(lines[2].split()[2])
+ny = int(lines[2].split()[2]) 
 dy = float(lines[2].split()[-1])
 gamma = float(lines[3].split()[-1])
 
@@ -51,8 +59,6 @@ for line in lines[7:]:
         except:
             data.append(float(0.0))            
         
-    
-    
 x_array = np.array(x_array)
 y_array = np.array(y_array)
 x_array = np.unique(x_array)
@@ -67,6 +73,7 @@ dmax = np.max(data)
 
 fig = plt.figure(figsize=(12,12)) # , layout='constrained')
 ax = plt.axes()
+
 #plt.title("2D Riemann problem (WENO5) at t= %8.3e"%(time))
 plt.pcolormesh(X, Y, np.transpose(data), cmap='jet', \
                vmax=dmax, vmin=dmin) # \
@@ -76,5 +83,6 @@ plt.pcolormesh(X, Y, np.transpose(data), cmap='jet', \
 ax.set_aspect('equal', adjustable='box')
 # this somehow makes the colorbar scale match with the y height
 plt.colorbar(label=fieldname,fraction=0.046, pad=0.04)
+
+#plt.savefig("pres_otmhd_x1_y1_%04d.png"%(num), dpi=144)   
 plt.show()
-#plt.savefig("pres_otmhd_test_%04d.png"%(num), dpi=144)   

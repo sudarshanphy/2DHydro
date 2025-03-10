@@ -140,7 +140,26 @@ contains
           call applyBC_all()
 
        end do ! rk step loop
-       
+
+       ! get the updated solution and store it as Up1
+       solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
+
+       do j = jGlo, jGhi
+         do i = iGlo, iGhi
+           Up1(DENS_CONS,i,j) = solnVar(DENS_VAR,i,j) 
+           Up1(MOMX_CONS:MOMZ_CONS,i,j) = solnVar(DENS_VAR,i,j) * solnVar(VELX_VAR:VELZ_VAR,i,j)
+           Up1(ENER_CONS,i,j) = solnVar(ENER_VAR,i,j)
+
+#ifdef MHD
+           Up1(BMFX_CONS:BMFZ_CONS,i,j) = solnVar(BMFX_VAR:BMFZ_VAR,i,j)
+           Up1(BPSI_CONS,i,j) = solnVar(BPSI_VAR,i,j)
+#endif
+         end do
+       end do
+
+       nullify(solnVar) 
+        
+       ! apply RK2 computation
        solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
 
        do j=jGlo, jGhi

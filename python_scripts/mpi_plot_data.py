@@ -1,3 +1,11 @@
+'''
+03/09/2025
+Sudarshan Neopane
+This file is to read in data from a parallel run.
+Each block write's it's own output file.
+For a block with rank 4, the outfile file at initilization will be
+filename: basenm_0004(block rank)_0000.dat
+'''
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -9,7 +17,7 @@ mpl.rcParams['font.serif'] = ['Times New Roman']
 mpl.rcParams['font.size'] = 20.0
 
 def get_blk_info(basenm, fieldname):
-    fname = "./output/"+basenm+"_0000_0000.dat"
+    fname = "../output/"+basenm+"_0000_0000.dat"
     f = open(fname, "r")
     lines = f.readlines()[0:7]
     linem1 = lines[1]
@@ -35,7 +43,7 @@ def get_blk_info(basenm, fieldname):
     return [nx, ny, lnx, lny, xblk, yblk, index]
 
 
-basenm = "rotormhd_test_y2"
+basenm = "rotormhd_test_x2_y1"
 num = 1
 fieldname = "pres"
 
@@ -55,7 +63,7 @@ y_array = []
 data = []
 
 for file in fnames:
-    f = open("./output/"+file, "r")
+    f = open("../output/"+file, "r")
     #print(f)
     lines = f.readlines()
     f.close()
@@ -84,33 +92,29 @@ for i, x in enumerate(x_unique):
         index = np.intersect1d(x_index, y_index)
         data_reordered.append(data[index])
 
-        
-
-
-
-x_array = np.unique(x_array)
-y_array = np.unique(y_array)
+#x_array = np.unique(x_array)
+#y_array = np.unique(y_array)
 data = np.array(data_reordered).reshape((nx, ny))
 
 
-X, Y = np.meshgrid(x_array, y_array)
+X, Y = np.meshgrid(x_unique, y_unique)
 dmin = np.min(data)
 dmax = np.max(data)
 
-print(dmin, dmax)
+#print(dmin, dmax)
 
 
-fig = plt.figure(figsize=(12,12)) # , layout='constrained')
+fig = plt.figure(num = basenm, figsize=(12,12)) # , layout='constrained')
 ax = plt.axes()
 #plt.title("2D Riemann problem (WENO5) at t= %8.3e"%(time))
-plt.pcolormesh(X, Y, np.transpose(data), cmap='jet', \
+mesh = plt.pcolormesh(X, Y, np.transpose(data), cmap='jet', \
                vmax=dmax, vmin=dmin) # \
                #norm=mpl.colors.LogNorm(0.12,1.76))
-
 
 ax.set_aspect('equal', adjustable='box')
 # this somehow makes the colorbar scale match with the y height
 plt.colorbar(label=fieldname,fraction=0.046, pad=0.04)
-plt.show()
-#plt.savefig("pres_otmhd_test_%04d.png"%(num), dpi=144)   
 
+
+#plt.savefig("pres_otmhd_x2_2_%04d.png"%(num), dpi=144)   
+plt.show()
