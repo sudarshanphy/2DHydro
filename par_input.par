@@ -1,17 +1,17 @@
 #parameter file for the 2D hydro solver
 
 problem = "rotormhd"
-basenm = "rotormhd_test_x3_y1"
+basenm = "rotormhd_test_x2_y2"
 xmin = 0.0
 xmax = 1.0
 ymin = 0.0
 ymax = 1.0
-nx = 300
-ny = 300
-xblk = 3
-yblk = 1
+nx = 400
+ny = 400
+xblk = 2
+yblk = 2
 t0 = 0.0
-tf = 0.5
+tf = 0.02
 dt = 1.0e-6
 out_dt = 0.1
 gamma = 1.4

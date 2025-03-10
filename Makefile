@@ -3,7 +3,8 @@
 FC=mpif90
 
 #flags for the compiler
-FFLAGS=-g -cpp -fdefault-real-8 
+#FFLAGS=-pg -Wall -cpp -fdefault-real-8 
+FFLAGS=-g -Wall -cpp -fdefault-real-8 
 
 # Define a variable to indicate whether we are building for MHD
 MHD ?= 0

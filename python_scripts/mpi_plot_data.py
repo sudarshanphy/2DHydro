@@ -43,7 +43,7 @@ def get_blk_info(basenm, fieldname):
     return [nx, ny, lnx, lny, xblk, yblk, index]
 
 
-basenm = "rotormhd_test_x2_y1"
+basenm = "rotormhd_test_x2_y2"
 num = 1
 fieldname = "pres"
 
