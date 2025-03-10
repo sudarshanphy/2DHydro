@@ -18,6 +18,7 @@ contains
 
        use applyBC_module, only: applyBC_all 
        use misc_module, only: to_upper
+       use guard_func, only: guardcell_fill
        implicit none
        real, pointer :: solnVar(:,:,:)
        real(8), intent(in) :: dt

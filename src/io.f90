@@ -7,7 +7,8 @@ contains
   subroutine write_output(t, step, outputno, restart_init)
    use sim_data, only: nx, ny, gamma, basenm, dx, dy, &
                        mainVar, ilo, ihi, jlo, jhi, &
-                       Gpts, myrank, xblk, yblk, lnx, lny
+                       Gpts, myrank, xblk, yblk, lnx, lny, &
+                       iGlo, jGlo, iGhi, jGhi
 
    use grid_func, only: get_coords
    implicit none
@@ -21,13 +22,13 @@ contains
 
    real, allocatable:: x(:), y(:)
 
-  allocate(x(ilo:ihi))
-  allocate(y(jlo:jhi))
+  allocate(x(iGlo:iGhi))
+  allocate(y(jGlo:jGhi))
 
-  call get_coords('x',ilo,ihi,x)
-  call get_coords('y',jlo,jhi,y)
+  call get_coords('x',iGlo,iGhi,x)
+  call get_coords('y',jGlo,jGhi,y)
 
-  solnVar(1:,ilo:,jlo:) => mainVar(1:,ilo:ihi, jlo:jhi)
+  solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
   ionum = 100
   
 12   format (1x, 50(es25.18, :, 1x))
@@ -55,8 +56,8 @@ contains
 #else
   write(ionum, *) "# xcenter ycenter dens velx vely velz pres ener"
 #endif
-  do i = ilo, ihi
-     do j = jlo, jhi
+  do i = iGlo, iGhi
+     do j = jGlo, jGhi
         write(ionum, 12) x(i), y(j), solnVar(:,i,j)
      end do
      write(ionum, *) "####"

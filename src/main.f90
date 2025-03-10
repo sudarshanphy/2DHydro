@@ -10,7 +10,7 @@ program hydro
   use rk2_module, only: RK2_SSP
   use misc_module, only: get_dt
   use mpi_func
-               
+  use guard_func               
   use mpi 
 
   implicit none
@@ -62,8 +62,6 @@ program hydro
   call guardcell_fill()
   call applyBC_all()
   
-  !stop
-   
   time = t0
   timeio = time + out_dt
   ! evolution loop
