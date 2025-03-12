@@ -43,9 +43,9 @@ def get_blk_info(basenm, fieldname):
     return [nx, ny, lnx, lny, xblk, yblk, index]
 
 
-basenm = "rotormhd_test_x2_y2"
-num = 1
-fieldname = "pres"
+basenm = "kh_test_x2_y2"
+num = 30
+fieldname = "dens"
 
 nx, ny, lnx, lny, xblk, yblk, index = get_blk_info(basenm, fieldname)
 
@@ -60,13 +60,24 @@ for j in range(yblk):
 
 x_array = []
 y_array = []
-data = []
 
-for file in fnames:
+data2d = np.zeros((nx,ny))
+
+for kk,file in enumerate(fnames):
     f = open("../output/"+file, "r")
     #print(f)
     lines = f.readlines()
+    
     f.close()
+    data = []
+    xrank = int(kk%xblk)
+    yrank = int(np.floor(kk/xblk))
+    ilo = int(xrank * lnx)
+    ihi = int((xrank + 1)*lnx - 1)
+    jlo = int(yrank * lny)
+    jhi = int((yrank + 1)*lny - 1)
+    #print(xrank, yrank)
+    #print(ilo, ihi, jlo, jhi)
     for line in lines[7:]:
         lst = line.split()
         if (lst[0] != "####"):
@@ -76,38 +87,23 @@ for file in fnames:
                 data.append(float(lst[index]))
             except:
                 data.append(float(0.0))
+    data2d[ilo:ihi+1,jlo:jhi+1] = np.array(data).reshape((lnx,lny))
 
-x_array = np.array(x_array)
-y_array = np.array(y_array)
-data = np.array(data)
 
 x_unique = np.unique(x_array)
 y_unique = np.unique(y_array)
-data_reordered = []
-
-for i, x in enumerate(x_unique):
-    for j, y in enumerate(y_unique):
-        y_index = np.argwhere(y_array == y).flatten()
-        x_index = np.argwhere(x_array == x).flatten()
-        index = np.intersect1d(x_index, y_index)
-        data_reordered.append(data[index])
-
-#x_array = np.unique(x_array)
-#y_array = np.unique(y_array)
-data = np.array(data_reordered).reshape((nx, ny))
-
 
 X, Y = np.meshgrid(x_unique, y_unique)
-dmin = np.min(data)
-dmax = np.max(data)
+dmin = np.min(data2d)
+dmax = np.max(data2d)
 
-#print(dmin, dmax)
+print(dmin, dmax)
 
 
 fig = plt.figure(num = basenm, figsize=(12,12)) # , layout='constrained')
 ax = plt.axes()
 #plt.title("2D Riemann problem (WENO5) at t= %8.3e"%(time))
-mesh = plt.pcolormesh(X, Y, np.transpose(data), cmap='jet', \
+mesh = plt.pcolormesh(X, Y, np.transpose(data2d), cmap='jet', \
                vmax=dmax, vmin=dmin) # \
                #norm=mpl.colors.LogNorm(0.12,1.76))
 
