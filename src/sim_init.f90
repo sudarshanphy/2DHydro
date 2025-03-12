@@ -53,8 +53,8 @@ contains
         end do
       end do
     
-    case ("CONSTANT")
-      print *, "Constant problem selected"
+    case ("LW")
+      print *, "Liska Wendroff problem selected"
       do j = jlo, jhi
         do i = ilo, ihi
            ! shift to interior index
@@ -62,16 +62,20 @@ contains
            jInt = j 
 
            ! initialize the fields
-           solnVar(DENS_VAR, i,j) = 1.0e0
+           solnVar(DENS_VAR, i,j) = 0.125
            solnVar(VELX_VAR, i,j) = 0.0e0
            solnVar(VELY_VAR, i,j) = 0.0e0
-           solnVar(PRES_VAR, i,j) = 1.0e0
+           solnVar(PRES_VAR, i,j) = 0.140
 
-           !solnVar(i,j,ENER_VAR) = eos_gete(solnVar(i,j,NVAR_BEGIN:NVAR_END))
+           ! add a region with very high pressure
+           if ((x(iInt) + y(jInt)) > 0.15) then
+             solnVar(DENS_VAR, i,j) = 1.0e0
+             solnVar(PRES_VAR, i,j) = 1.0e0
+           end if
            call eos_gete(solnVar(:,i,j))
         end do
       end do
-
+    
     case ("KH")
       print *, "Kelvin-Helmholtz (KH) problem selected"
       do j = jlo, jhi

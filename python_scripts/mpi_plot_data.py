@@ -43,8 +43,8 @@ def get_blk_info(basenm, fieldname):
     return [nx, ny, lnx, lny, xblk, yblk, index]
 
 
-basenm = "kh_test_x2_y2"
-num = 30
+basenm = "lw_test_x2_y2"
+num = 2
 fieldname = "dens"
 
 nx, ny, lnx, lny, xblk, yblk, index = get_blk_info(basenm, fieldname)
