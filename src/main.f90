@@ -2,16 +2,18 @@ program hydro
 #include "param.h"
 
   use sim_data
+  use grid_func
   use sim_init, only: init_problem
   use sim_restart, only: restart_problem
   use io_module, only: write_output
   use applyBC_module, only: applyBC_all
   use rk2_module, only: RK2_SSP
-  use misc_module, only: get_dt 
+  use misc_module, only: get_dt
+  use mpi_func
+  use guard_func               
+  use mpi 
 
   implicit none
-
-  real, allocatable, dimension(:) :: xval, yval
 
   real :: time, dtime, timeio
   integer ::  step, outputno
@@ -22,24 +24,28 @@ program hydro
  
   real :: maxdivB
 
-  !read the parameter file
+  ! initilize mpi
+  call init_procs()
+
+  !read the parameter file by each processor
   call read_par()
-  
-  !allocate space for the interior grid points
-  allocate(xval(nx), yval(ny))
+
+  !check processor numbers
+  call check_procs()
 
   !initialize the grid
-  call grid_init(xval, yval)
-
+  call grid_init()
+  
+  call create_mpiDatatypes()
   ! check if it is a restart or not
   if (.not. restart) then
     step = 0
     outputno = 0
 
     !initialize the problem
-    call init_problem(xval, yval)
-                                             
-    call write_output(t0, step, xval, yval, outputno) 
+    call init_problem()
+                                            
+    call write_output(t0, step, outputno) 
 
   else
 
@@ -47,15 +53,15 @@ program hydro
     call restart_problem(restart_no, t0)
     step = restart_step
     outputno = restart_no
-    call write_output(t0, step, xval, yval, &
-                      outputno, .true.) 
+    call write_output(t0, step, outputno, .true.) 
 
   end if
-  
+
   call CPU_TIME(timer_start)
   timer_step0 = 0
+  call guardcell_fill()
   call applyBC_all()
-   
+  
   time = t0
   timeio = time + out_dt
   ! evolution loop
@@ -77,15 +83,12 @@ program hydro
       io_output = .true.
     end if
 
-
 #ifdef MHD
     ! glm update psi 
     call glm(dt)
 #endif 
     ! do a SSP RK2 step
     call RK2_SSP(dt)
-    ! apply BC
-    call applyBC_all()
 
     time = time + dt
     step = step + 1
@@ -96,23 +99,30 @@ program hydro
       timer_step1 = step
       time_per_step = (timer_stop - timer_start) &
                      /(timer_step1 - timer_step0)
-
-      print *, "# step0 = ", timer_step0, " step1 = ", timer_step1
-      print *, "# time per step = ", time_per_step
-
+      
+      if (myrank == MASTER_PROC) then
+        print *, "# step0 = ", timer_step0, " step1 = ", timer_step1
+        print *, "# time per step = ", time_per_step
+      end if
       timer_step0 = step
 
       outputno = outputno + 1
-      call write_output(time, step, xval, yval, outputno)
-      print *, "$$$ Step: ", step," || time = ", time, " || output # = ", outputno," $$$" 
+      call write_output(time, step, outputno)
+      if (myrank == MASTER_PROC) then
+        print *, "$$$ output basenm = ", trim(basenm)
+        print *, "$$$ Step: ", step," || time = ", time, " || output # = ", outputno," $$$" 
+      end if
       call CPU_TIME(timer_start)
     end if
 #ifdef MHD
     call glm(dt)
 #endif
-    print *, "Step: ", step," --> time = ", time , ", dt = ", dt
+    if (myrank == MASTER_PROC) then
+      print *, "Step: ", step," --> time = ", time , ", dt = ", dt
+    end if
   end do
-  
-  deallocate(mainVar)
-  deallocate(xval, yval)
+
+
+  call grid_finalize()
+  call finalize_procs()
 end program hydro

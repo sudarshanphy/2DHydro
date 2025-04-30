@@ -1,5 +1,6 @@
 module misc_module
 #include "param.h"
+  use mpi
   implicit none
 contains
 
@@ -25,47 +26,50 @@ contains
     end function to_upper
 
     subroutine get_dt(dt)
-      use sim_data, only: gamma, xTpts, yTpts, dx, dy, cfl, &
-                          mainVar
+      use sim_data, only: gamma, dx, dy, cfl, &
+                          mainVar, iGlo, iGhi, &
+                          jGlo, jGhi, comm, ierr
+      use mpi
 #ifdef MHD
       use sim_data, only: ch
 #endif
       implicit none
-      real, dimension(xTpts, yTpts) :: xsmax, ysmax
+      real, dimension(iGlo:iGhi, jGlo:jGhi) :: xsmax, ysmax
       real :: cs, xcmax, ycmax   !sound speed
 #ifdef MHD  
       real :: cax, cay, cfx, cfy, B2, cB2 !alfven wave and magnetosonic wave
 #endif
       real, intent(out) :: dt
+      real :: localdt, localch
       integer :: i, j
       real :: max_xsmax, max_ysmax 
       real, pointer :: solnVar(:,:,:)
 
-      solnVar(1:,1:,1:) => mainVar(:,:,:)
+      solnVar(1:,iGlo:,jGlo:) => mainVar(:,:,:)
 
-      do j = 1, yTpts
-        do i = 1, xTpts
-           cs = sqrt(gamma * solnVar(i,j,PRES_VAR) / solnVar(i,j,DENS_VAR))
+      do j = jGlo, jGhi
+        do i = iGlo, iGhi
+           cs = sqrt(gamma * solnVar(PRES_VAR,i,j) / solnVar(DENS_VAR,i,j))
 
            if (cs < 0.0) then
              print *, "Imaginary sound speed!"
              print *, "At i,j, with gamma, pres, dens = ", i, j, gamma, &
-                           solnVar(i,j,PRES_VAR), solnVar(i,j,DENS_VAR)
+                           solnVar(PRES_VAR,i,j), solnVar(DENS_VAR,i,j)
            endif
            xcmax = cs
            ycmax = cs
 #ifdef MHD
-           cax = solnVar(i,j,BMFX_VAR) / sqrt(solnVar(i,j,DENS_VAR))
-           cay = solnVar(i,j,BMFY_VAR) / sqrt(solnVar(i,j,DENS_VAR))
-           B2 =  sum(solnVar(i,j,BMFX_VAR:BMFZ_VAR)*solnVar(i,j,BMFX_VAR:BMFZ_VAR))
-           cB2 = B2 / solnVar(i,j,DENS_VAR)
+           cax = solnVar(BMFX_VAR,i,j) / sqrt(solnVar(DENS_VAR,i,j))
+           cay = solnVar(BMFY_VAR,i,j) / sqrt(solnVar(DENS_VAR,i,j))
+           B2 =  sum(solnVar(BMFX_VAR:BMFZ_VAR,i,j)*solnVar(BMFX_VAR:BMFZ_VAR,i,j))
+           cB2 = B2 / solnVar(DENS_VAR,i,j)
            cfx = sqrt(0.5 * ((cs + cB2) + sqrt((cs + cB2)**2 - 4.0 * cs * cax * cax)))
            cfy = sqrt(0.5 * ((cs + cB2) + sqrt((cs + cB2)**2 - 4.0 * cs * cay * cay)))
            xcmax = cfx
            xcmax = cfy
 #endif
-           xsmax(i,j) = xcmax + abs(solnVar(i,j,VELX_VAR))
-           ysmax(i,j) = ycmax + abs(solnVar(i,j,VELY_VAR))
+           xsmax(i,j) = xcmax + abs(solnVar(VELX_VAR,i,j))
+           ysmax(i,j) = ycmax + abs(solnVar(VELY_VAR,i,j))
         end do
       end do
        
@@ -73,11 +77,18 @@ contains
       
 #ifdef MHD
       !speed for divergence cleaning
-      ch = max(max_xsmax, max_ysmax)
+      localch = max(max_xsmax, max_ysmax)
+      ! get max ch from all the cores
+      call MPI_ALLREDUCE(localch, ch, 1, MPI_DOUBLE, MPI_MAX, comm, ierr)
 #endif
 
       !print *, "max xsmax, ysmax = ", max_xsmax, max_ysmax 
-      dt = min(cfl * dx/max_xsmax, cfl * dy/max_ysmax)
+      localdt = min(cfl * dx/max_xsmax, cfl * dy/max_ysmax)
+     
+      !print *, "local dt = ", localdt 
+      ! get min dt from all the cores
+      call MPI_ALLREDUCE(localdt, dt, 1, MPI_DOUBLE, MPI_MIN, comm, ierr)
+      !print *, "global dt = ", dt
       nullify(solnVar) 
 
     end subroutine get_dt

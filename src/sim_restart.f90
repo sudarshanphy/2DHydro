@@ -4,34 +4,40 @@ module sim_restart
 contains
   subroutine restart_problem(fno, time)
     use sim_data, only: xTpts, yTpts, basenm, ilo, ihi, jlo, jhi, &
-                        mainVar
+                        mainVar, myrank
     implicit none
     integer, intent(in) :: fno
     real, intent(out) :: time
     real, pointer :: solnVar(:,:,:)
     integer :: i, j, ionum, pos1, pos2
-    character(len=256) :: fname, line1, line2, line3, line4, line5, linehash
-    character(len=10) :: int_to_str 
+    character(len=256) :: fname, line1, line2, line3, line4, line5, line6, linehash
+    character(len=10) :: int_to_str, rank_to_str 
     real :: x, y
     
-    solnVar(ilo:,jlo:,1:) => mainVar(ilo:ihi,jlo:jhi,1:)
+    solnVar(1:,ilo:,jlo:) => mainVar(1:,ilo:ihi,jlo:jhi)
     solnVar(:,:,:) = 0.0
 
     ionum = 56 
 12 format (1x, 50(es25.18, :, 1x))
 
    write(int_to_str, "(I4.4)") fno
-   fname = "./output/"//trim(adjustl(basenm))//"_"//trim(adjustl(int_to_str))//".dat"
+   write(rank_to_str, "(I4.4)") myrank
+
+   fname = "./output/"//trim(adjustl(basenm))//"_"//trim(adjustl(rank_to_str))//&
+     "_"//trim(adjustl(int_to_str))//".dat"
+
    open(unit=ionum, file=fname, status="old")
    read(ionum, '(A)') line1
    read(ionum, *) line2
    read(ionum, *) line3
    read(ionum, *) line4
    read(ionum, *) line5
+   read(ionum, *) line6
+   read(ionum, *) line6
     
    do i = ilo, ihi
      do j = jlo, jhi
-         read(ionum, 12) x, y, solnVar(i,j,NVAR_BEGIN:NVAR_END)
+         read(ionum, 12) x, y, solnVar(NVAR_BEGIN:NVAR_END,i,j)
      end do
      read(ionum, *) linehash
    end do 

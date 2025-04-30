@@ -1,0 +1,6 @@
+#Using gprof for multpile cores
+1) Use -pg as a compilation flag
+2) export GMON_OUT_PREFIX=gmon.out-  [set a prefix for output]
+3) mpirun -x GMON_OUT_PREFIX -np Nproc EXEC.exe  [run the code]
+4) gprof -s EXEC.exe gmon.out-*  [collect and sum the results]
+5) gprof EXEC.exe gmon.sum [examine the file/s]

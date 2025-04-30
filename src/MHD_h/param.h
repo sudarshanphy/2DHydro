@@ -1,6 +1,10 @@
 
 #define MHD
 
+#define MASTER_PROC 0
+
+#define NDIM 2
+
 #if 0
  How many primitive variables are there in the simulation
 #endif
