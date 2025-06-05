@@ -44,7 +44,7 @@ module mpi_func
       implicit none
       ! finalize mpi
       call MPI_FINALIZE(ierr)
-      stop
+      !stop   !print IEEE meesages at the botom if not commented
     end subroutine
 
     subroutine create_mpiDatatypes()

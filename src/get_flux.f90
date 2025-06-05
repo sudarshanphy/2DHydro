@@ -20,8 +20,8 @@ contains
         real(8) :: dL, udL, vdL, wdL, pL
         real(8) :: dR, udR, vdR, wdR, pR
         real(8) :: sdR, sdL, ufL, ufR, vfL, vfR, wfL, wfR
-        real(8) :: eL, eR, HL, HR, cL, cR
-        real(8) :: ubar, vbar, wbar, Hbar, cbar
+        real(8) :: eL, eR, cL, cR, HL, HR
+        real(8) :: ubar, vbar, wbar, hbar, cbar 
         real(8) :: qL, qR, qbar, SL, SR, SM
         real(8) :: dstarL, dstarR, pstar
         real(8) :: dustarL, dustarR, dvstarL, dvstarR
@@ -154,12 +154,17 @@ contains
         real(8), dimension(1:NCONSVAR_NUMBER), intent(in) :: Uleft, Uright
         real(8), dimension(1:NCONSVAR_NUMBER), intent(out) :: Flux
         real(8), dimension(1:NCONSVAR_NUMBER) :: FL, FR, UL, UR, Fstar
-        real(8) :: dL, udL, vdL, wdL, pL, bxL, byL, bzL, bpL
-        real(8) :: dR, udR, vdR, wdR, pR, bxR, byR, bzR, bpR
+        real(8) :: dL,  pL 
+        real(8) :: dR,  pR
         real(8) :: sdR, sdL, ufL, ufR, vfL, vfR, wfL, wfR
-        real(8) :: eL, eR, HL, HR, cL, cR, B2L, B2R, vBL, vBR
+        real(8) :: eL, eR, HL, HR, cL, cR
+#ifdef MHD
+        real(8) :: bxL, byL, bzL, bpL
+        real(8) :: bxR, byR, bzR, bpR
+        real(8) :: B2L, B2R, vBL, vBR, qBL, qBR, cfL, cfR
+#endif
         real(8) :: ubar, vbar, wbar, Hbar, cbar
-        real(8) :: qL, qR, qbar, qBL, qBR, SL, SR, cfL, cfR
+        real(8) :: qL, qR, qbar, SL, SR
         real(8), dimension(3) :: n
         ! index for different dimension
         integer :: id, imn, imt1, imt2, ibn, ibt1, ibt2, ie, ips
@@ -331,7 +336,7 @@ contains
         real(8), dimension(1:NCONSVAR_NUMBER) :: FL, FR, UL, UR, UL1, U2, UR1, Uhll
         real(8) :: dL, udL, vdL, wdL, pL, bxL, byL, bzL, bpL
         real(8) :: dR, udR, vdR, wdR, pR, bxR, byR, bzR, bpR
-        real(8) :: sdR, sdL, ufL, ufR, vfL, vfR, wfL, wfR
+        real(8) :: ufL, ufR, vfL, vfR, wfL, wfR
         real(8) :: eL, eR, cfL, cfR, ptL, ptR, pt 
         real(8) :: qL, qR, SL, SR, SM, qBL, qBR, B2L, B2R, vBL, vBR
         real(8) :: f1, f2, SL1, SR1, aVL, aVR, at1, at2, vt1L, vt2L

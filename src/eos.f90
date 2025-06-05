@@ -6,7 +6,6 @@ contains
         use sim_data, only: gamma
         implicit none
         real, dimension(NVAR_NUMBER), intent(inout):: U
-        real :: ef
         real :: df, uf, vf, wf, pf, bxf, byf, bzf
 
         df = U(DENS_VAR)
@@ -29,7 +28,6 @@ contains
         use sim_data, only: gamma
         implicit none
         real, dimension(NVAR_NUMBER), intent(inout):: U
-        real :: pf
         real :: df, uf, vf, wf, ef, bxf, byf, bzf
 
         df = U(DENS_VAR)

@@ -130,8 +130,8 @@ contains
   end subroutine applyBC
   
   subroutine applyBC_all()
-    use sim_data, only: mainVar, iGlo, iGhi, &
-                        jGlo, jGhi, at_xlboundary, &
+    use sim_data, only: mainVar, iGlo, &
+                        jGlo, at_xlboundary, &
                         at_ylboundary, at_xrboundary, &
                         at_yrboundary
     implicit none

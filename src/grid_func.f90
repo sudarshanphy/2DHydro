@@ -8,7 +8,6 @@ module grid_func
     use sim_data
     use misc_module, only: to_upper
     implicit none
-    integer :: i, j
   
     dx = (xmax - xmin) / nx
     dy = (ymax - ymin) / ny

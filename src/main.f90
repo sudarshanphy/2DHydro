@@ -15,7 +15,7 @@ program hydro
 
   implicit none
 
-  real :: time, dtime, timeio
+  real :: time, timeio
   integer ::  step, outputno
   logical :: io_output
   

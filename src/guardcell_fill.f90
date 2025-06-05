@@ -4,9 +4,9 @@ module guard_func
   contains
   subroutine guardcell_fill()
     use sim_data, only: ilo, jlo, ihi, jhi, &
-                        iGlo, jGlo, iGhi, jGhi, &
+                        iGlo, jGlo, &
                         mainVar, myrank, xblk, yblk, &
-                        lxTpts, lyTpts, comm, ierr, status1, &
+                        comm, ierr, status1, &
                         at_xlboundary, at_xrboundary, at_ylboundary, &
                         at_yrboundary, mainVar, Gpts, dtype_mpi
   
@@ -14,7 +14,6 @@ module guard_func
     implicit none
     integer :: l_blk, r_blk, t_blk, b_blk
     integer :: tag1 = 20, tag2 = 21, tag3 = 23, tag4 = 24
-    integer :: ii
   
     ! determine the neighbouring ranks
     ! if at the boundary, apply periodic BC 

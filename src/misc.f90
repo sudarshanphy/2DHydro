@@ -38,9 +38,10 @@ contains
       real :: cs, xcmax, ycmax   !sound speed
 #ifdef MHD  
       real :: cax, cay, cfx, cfy, B2, cB2 !alfven wave and magnetosonic wave
+      real :: localch
 #endif
       real, intent(out) :: dt
-      real :: localdt, localch
+      real :: localdt
       integer :: i, j
       real :: max_xsmax, max_ysmax 
       real, pointer :: solnVar(:,:,:)

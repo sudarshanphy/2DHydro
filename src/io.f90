@@ -7,7 +7,7 @@ contains
   subroutine write_output(t, step, outputno, restart_init)
    use sim_data, only: nx, ny, gamma, basenm, dx, dy, &
                        mainVar, ilo, ihi, jlo, jhi, &
-                       Gpts, myrank, xblk, yblk, lnx, lny, &
+                       myrank, xblk, yblk, lnx, lny, &
                        iGlo, jGlo, iGhi, jGhi
 
    use grid_func, only: get_coords

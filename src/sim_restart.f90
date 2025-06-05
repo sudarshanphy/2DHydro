@@ -3,7 +3,7 @@ module sim_restart
   implicit none
 contains
   subroutine restart_problem(fno, time)
-    use sim_data, only: xTpts, yTpts, basenm, ilo, ihi, jlo, jhi, &
+    use sim_data, only: basenm, ilo, ihi, jlo, jhi, &
                         mainVar, myrank
     implicit none
     integer, intent(in) :: fno

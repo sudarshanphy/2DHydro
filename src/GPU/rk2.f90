@@ -12,7 +12,7 @@ contains
        use recon_module, only: recon_getcellfaces
        use eos_module, only: eos_getp
        use sim_data, only: grav, usegrav, ilo, ihi, jlo, jhi, &
-                           dx, dy, &
+                           gamma, dx, dy, lyTpts, lxTpts, smallf, &
                            flux_solver, mainVar, iGlo, jGlo, iGhi, &
                            jGhi
 
@@ -30,7 +30,7 @@ contains
        real(8), dimension(NCONSVAR_NUMBER) :: Uleft, Uright, Vleft, Vright
        real(8), dimension(NCONSVAR_NUMBER) :: sgrav, sterm
 
-       integer :: i, j, k, n 
+       integer :: i, j, k, l, m, n
        
        solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
 
@@ -68,7 +68,7 @@ contains
          ! use the updated solution for the next step
          solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
 
-         call recon_getcellfaces(solnVar, &
+         call recon_getcellfaces(dt, solnVar, &
                                  x_plus, x_minus, y_plus, y_minus)
 
           do j=jlo, jhi + 1
