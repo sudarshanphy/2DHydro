@@ -96,12 +96,12 @@ contains
 
   end subroutine get_facevalue_weno
 
-  subroutine get_facevalue_weno5z(solnVar, flxplus, flxminus, dir, check)
+  subroutine get_facevalue_weno5z(solnVar, x_plus, x_minus, y_plus, y_minus, check)
         use sim_data, only: ilo, ihi, jlo, jhi, iGlo, iGhi, jGlo, jGhi 
         implicit none
         real, dimension(1:, iGlo:, jGlo:), intent(in) :: solnVar
-        real, dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(inout) :: flxminus, flxplus
-        integer, intent(in) :: dir
+        real, dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(inout) :: x_minus, x_plus, &
+                                                                                y_minus, y_plus
         logical, intent(in), optional :: check
 
         real, dimension(1:5) :: qin
@@ -110,6 +110,7 @@ contains
         real, dimension(3) :: beta, alpha, alphabar, &
                               omega, omegabar, qpluspoly, &
                               qminuspoly
+        real, dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: flxminus, flxplus
         real :: qplus12, qminus12
         integer :: i, j, n, imm, im, ip, ipp, &
                             jmm, jm, jp, jpp  
@@ -136,7 +137,13 @@ contains
         ! linear weights for i - 1/2
         real, dimension(3) :: dbarcoeff = (/0.3, 0.6, 0.1/)
         
+        !$OMP TARGET ENTER DATA MAP(TO: coeff1p1, coeff1p2, coeff1p3)
+        !$OMP TARGET ENTER DATA MAP(TO: coeff1m1, coeff1m2, coeff1m3)
+        !$OMP TARGET ENTER DATA MAP(TO: n13o12, dcoeff, dbarcoeff)
+        !$OMP TARGET ENTER DATA MAP(TO: imm, im, ip, ipp, jmm, jm, jp, jpp)
+        !$OMP TARGET ENTER DATA MAP(T0: flxplus, flxminus)
 
+        do dir = 1, 2
         select case (dir)
            case (1)
               imm = 2; im = 1; ip = 1; ipp = 2 
@@ -145,12 +152,8 @@ contains
               imm = 0; im = 0; ip = 0; ipp = 0 
               jmm = 2; jm = 1; jp = 1; jpp = 2
         end select
-        !$OMP TARGET ENTER DATA MAP(TO: coeff1p1, coeff1p2, coeff1p3)
-        !$OMP TARGET ENTER DATA MAP(TO: coeff1m1, coeff1m2, coeff1m3)
-        !$OMP TARGET ENTER DATA MAP(TO: n13o12, dcoeff, dbarcoeff)
-        !$OMP TARGET ENTER DATA MAP(TO: imm, im, ip, ipp, jmm, jm, jp, jpp)
 
-        !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO SIMD &
+        !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(3) SIMD &
         !$OMP PRIVATE(qm2, qm1, q, qp1, qp2, beta) &
         !$OMP PRIVATE(absbeta_diff, alpha, alphabar) &
         !$OMP PRIVATE(omega, omegabar, qpluspoly, qminuspoly) &
@@ -215,16 +218,38 @@ contains
                end do
            end do
         end do
-        !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO SIMD
+        !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO
+
+        select case (dir)
+
+          case (1)
+          do n = 1, NCONSVAR_NUMBER
+             do j = jlo-1, jhi+1
+                 do i = ilo-1, ihi+1
+                    x_plus(n,i,j) = flxplus(n,i,j)
+                    x_minus(n,i,j) = flxminus(n,i,j)
+                 end do
+             end do
+          end do
+          case (2)
+          do n = 1, NCONSVAR_NUMBER
+             do j = jlo-1, jhi+1
+                 do i = ilo-1, ihi+1
+                    y_plus(n,i,j) = flxplus(n,i,j)
+                    y_minus(n,i,j) = flxminus(n,i,j)
+                 end do
+             end do
+          end do
+
+        end do  !dir
   end subroutine get_facevalue_weno5z
 
-  subroutine recon_getcellfaces(dt, solnVar, x_plus, x_minus, y_plus, y_minus)
+  subroutine recon_getcellfaces(solnVar, x_plus, x_minus, y_plus, y_minus)
 
         use sim_data, only: xTpts, yTpts, dx, dy, gamma, ilo, ihi, jlo, jhi, & 
                             recon_method, iGlo, iGhi, jGlo, jGhi
         use misc_module, only: to_upper
         implicit none
-        real, intent(in) :: dt
         real, dimension(1:, iGlo:, jGlo:), intent(in) :: solnVar
         real, dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(out) :: x_plus, x_minus, y_plus, y_minus
         
@@ -244,9 +269,7 @@ contains
                                     y_plus, y_minus, 2)
         else if (to_upper(trim(recon_method)) == "WENO5") then
                 call get_facevalue_weno5z(solnVar, &
-                                    x_plus, x_minus, 1)
-                call get_facevalue_weno5z(solnVar, &
-                                    y_plus, y_minus, 2)
+                                    x_plus, x_minus, y_plus, y_minus)
         end if
         !$OMP TARGET EXIT DATA MAP(FROM: x_plus, x_minus, y_plus, y_minus)
     end subroutine recon_getcellfaces

@@ -29,7 +29,7 @@ contains
   call get_coords('y',jGlo,jGhi,y)
 
   solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
-  ionum = 100
+  ionum = 10
   
 12   format (1x, 50(es25.18, :, 1x))
   

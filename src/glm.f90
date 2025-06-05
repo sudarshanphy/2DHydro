@@ -1,7 +1,6 @@
 subroutine glm(dt)
 #include "param.h"
 
-#ifdef MHD
   use sim_data, only: ch, mainVar, iGlo, jGlo, &
                                    iGhi, jGhi
   implicit none
@@ -10,6 +9,7 @@ subroutine glm(dt)
   ! The ratio of the hyperbolic and parabolic effects
   !   c_r = ( c_p**2 / c_h ) ~ 0.18
   ! Ref: Dedner et al. (2002)  p.657, p.661
+#ifdef MHD
   real(8), pointer :: bpsi(:,:)
   real(8), parameter :: cr = 0.2d0
   real(8) :: exp_factor
