@@ -4,6 +4,8 @@
 #define MASTER_PROC 0
 
 #define NDIM 2
+#define IAXIS 1
+#define JAXIS 2
 
 #if 0
  How many primitive variables are there in the simulation

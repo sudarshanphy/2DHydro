@@ -43,11 +43,11 @@ contains
            docheck = .true.
         end if
 
-        do dir = 1, 2
+        do dir = 1, NDIM
         select case (dir)
-           case (1)
+           case (IAXIS)
               im = 1; ip = 1; jm = 0; jp = 0
-           case (2)
+           case (JAXIS)
               im = 0; ip = 0; jm = 1; jp = 1
         end select
 
@@ -102,10 +102,10 @@ contains
                        fminus12 = q - 0.500 * minmod(delp, delm)
                      end if
                   end if   
-                  if (dir  == 1) then
+                  if (dir  == IAXIS) then
                     x_plus(n,i,j) = fplus12
                     x_minus(n,i,j) = fminus12
-                  else if (dir == 2) then
+                  else if (dir == JAXIS) then
                     y_plus(n,i,j) = fplus12
                     y_minus(n,i,j) = fminus12
                   end if
@@ -164,12 +164,12 @@ contains
            docheck = .true.
         end if
 
-        do dir = 1, 2
+        do dir = 1, NDIM
         select case (dir)
-           case (1)
+           case (IAXIS)
               imm = 2; im = 1; ip = 1; ipp = 2 
               jmm = 0; jm = 0; jp = 0; jpp = 0
-           case (2)
+           case (JAXIS)
               imm = 0; im = 0; ip = 0; ipp = 0 
               jmm = 2; jm = 1; jp = 1; jpp = 2
         end select
@@ -245,10 +245,10 @@ contains
                      end if
                   end if
 
-                  if (dir  == 1) then
+                  if (dir  == IAXIS) then
                     x_plus(n,i,j) = fplus12
                     x_minus(n,i,j) = fminus12
-                  else if (dir == 2) then
+                  else if (dir == JAXIS) then
                     y_plus(n,i,j) = fplus12
                     y_minus(n,i,j) = fminus12
                   end if
