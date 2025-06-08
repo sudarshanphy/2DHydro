@@ -5,14 +5,14 @@ contains
 
     subroutine RK2_SSP(dt)
 #ifndef MHD       
-       use flux_module, only: hllc,hlle
+       use flux_module, only: hllc,hlle, riemann_solve
 #else
-       use flux_module, only: hlle, hlld
+       use flux_module, only: hlle, hlld, riemann_solve
 #endif
        use recon_module, only: recon_getcellfaces
        use eos_module, only: eos_getp
        use sim_data, only: grav, usegrav, ilo, ihi, jlo, jhi, &
-                           gamma, dx, dy, lyTpts, lxTpts, smallf, &
+                           dx, dy, &
                            flux_solver, mainVar, iGlo, jGlo, iGhi, &
                            jGhi
 
@@ -23,14 +23,14 @@ contains
        real, pointer :: solnVar(:,:,:)
        real(8), intent(in) :: dt
 
-       real(8), dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: U, Up1
-       real(8), dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: x_plus, x_minus, y_plus, y_minus
+       real(8), dimension(1:NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: U, Up1
+       real(8), dimension(1:NDIM,1:NVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: recon_plus, recon_minus
                                            
-       real(8), dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: xF, yF
-       real(8), dimension(NCONSVAR_NUMBER) :: Uleft, Uright, Vleft, Vright
-       real(8), dimension(NCONSVAR_NUMBER) :: sgrav, sterm
+       real(8), dimension(1:NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: xF, yF
+       real(8), dimension(1:NCONSVAR_NUMBER) :: Uleft, Uright, Vleft, Vright
+       real(8), dimension(1:NCONSVAR_NUMBER) :: sgrav, sterm
 
-       integer :: i, j, k, l, m, n
+       integer :: i, j, k, n 
        
        solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
 
@@ -68,17 +68,19 @@ contains
          ! use the updated solution for the next step
          solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
 
-         call recon_getcellfaces(dt, solnVar, &
-                                 x_plus, x_minus, y_plus, y_minus)
+         call recon_getcellfaces(solnVar, &
+                                 recon_plus, recon_minus)
+         call riemann_solve(recon_plus, recon_minus, xF, yF)
 
-          do j=jlo, jhi + 1
+#if 0               
+         do j=jlo, jhi + 1
             do i = ilo, ihi + 1
 
                do n = 1, NCONSVAR_NUMBER
-                 Uleft(n) = x_plus(n,i-1,j)
-                 Uright(n) = x_minus(n,i,j)
-                 Vleft(n) = y_plus(n,i,j-1)
-                 Vright(n) = y_minus(n,i,j)
+                 Uleft(n)  = recon_plus(1,n,i-1,j)
+                 Uright(n) = recon_minus(1,n,i,j)
+                 Vleft(n)  = recon_plus(2,n,i,j-1)
+                 Vright(n) = recon_minus(2,n,i,j)
                end do
 
               if (to_upper(trim(flux_solver)) == "HLLC") then
@@ -106,11 +108,10 @@ contains
                 print *, "HLLE/HLLD -> MHD"
                 stop
               end if
-             
                
             end do
           end do
-
+#endif             
           do j=jlo, jhi
             do i = ilo, ihi
 #ifdef MHD
