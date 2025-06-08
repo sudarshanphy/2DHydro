@@ -50,7 +50,7 @@ OBJ=${SRC:.f90=.o}
 EXEC=run_hd.exe
 $(EXEC): $(OBJ)
 	$(FC) $(FFLAGS) $(HPATH) $(OBJ) -o $@
-	rm -f *.mod *.o  
+	rm -f *.mod *.o *.i 
 
 #executable to be created
 EXEC2=run_mhd.exe
