@@ -55,7 +55,15 @@ contains
             print *, "Wrong!! Direction should be X, Y, Z"
             stop
         end select
-
+        
+        !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(2) &
+        !$OMP MAP(TO: n, gamma) &
+        !$OMP FIRSTPRIVATE(dir, id, ips, ibn, is, js) &
+        !$OMP PRIVATE(dL, ufL, vfL, wfL, pL, eL) &
+        !$OMP PRIVATE(dR, ufR, vfR, wfR, pR, eR) &
+        !$OMP PRIVATE(sdR, sdL, cL, cR, qL, qR) &
+        !$OMP PRIVATE(UL, UR, HL, HR, ubar, vbar, wbar, Hbar, cbar, qbar) &
+        !$OMP PRIVATE(SL, SR, FL, FR, Flux) 
         do j = jlo, jhi + 1
            do i = ilo, ihi + 1
               dL  = recon_plus(dir,DENS_VAR,i-is,j-js)
@@ -190,8 +198,8 @@ contains
                   Flux = Fstar
               end if
 #ifdef MHD
-              Flux(ips) = 0.50 * ((ch * ch) * (qBL + qBR) - ch * (bpR - bpL))
-              Flux(ibn) = 0.50 * ((bpL + bpR) - ch * (qBR - qBL))
+              Flux(BPSI_CONS) = 0.50 * ((ch * ch) * (qBL + qBR) - ch * (bpR - bpL))
+              Flux(BMFX_CONS+dir-1) = 0.50 * ((bpL + bpR) - ch * (qBR - qBL))
 #endif
               if (dir == IAXIS) then
                 xF(1:NCONSVAR_NUMBER,i,j) = Flux(1:NCONSVAR_NUMBER)
@@ -201,9 +209,10 @@ contains
           
               end do
            end do
-        end do !dir 
+           !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO
+           end do !dir 
 
-        return
+           return
         
     end subroutine
 
