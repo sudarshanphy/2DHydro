@@ -24,7 +24,7 @@ contains
        real(8), intent(in) :: dt
 
        real(8), dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: U, Up1
-       real(8), dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: x_plus, x_minus, y_plus, y_minus
+       real(8), dimension(1:NDIM, 1:NVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: recon_plus, recon_minus
                                            
        real(8), dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: xF, yF
        real(8), dimension(NCONSVAR_NUMBER) :: Uleft, Uright, Vleft, Vright
@@ -68,17 +68,16 @@ contains
          ! use the updated solution for the next step
          solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
 
-         call recon_getcellfaces(solnVar, &
-                                 x_plus, x_minus, y_plus, y_minus)
+         call recon_getcellfaces(solnVar, recon_plus, recon_minus)
 
           do j=jlo, jhi + 1
             do i = ilo, ihi + 1
 
                do n = 1, NCONSVAR_NUMBER
-                 Uleft(n) = x_plus(n,i-1,j)
-                 Uright(n) = x_minus(n,i,j)
-                 Vleft(n) = y_plus(n,i,j-1)
-                 Vright(n) = y_minus(n,i,j)
+                 Uleft(n) = recon_plus(1, n,i-1,j)
+                 Uright(n) = recon_minus(1, n,i,j)
+                 Vleft(n) = recon_plus(2, n,i,j-1)
+                 Vright(n) = recon_minus(2, n,i,j)
                end do
 
               if (to_upper(trim(flux_solver)) == "HLLC") then

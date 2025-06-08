@@ -12,12 +12,11 @@ contains
 
   end function minmod
 
-  subroutine get_facevalue_weno(solnVar, x_plus, x_minus, y_plus, y_minus, check)
+  subroutine get_facevalue_weno(solnVar, recon_plus, recon_minus, check)
         use sim_data, only: ilo, ihi, jlo, jhi, iGlo, iGhi, jGlo, jGhi 
         implicit none
         real, dimension(1:, iGlo:, jGlo:), intent(in) :: solnVar
-        real, dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(inout) :: x_minus, x_plus, &
-                                                                                y_minus, y_plus
+        real, dimension(NDIM, NVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(inout) :: recon_minus, recon_plus
         logical, intent(in), optional :: check
         real :: fplus12, fminus12
 
@@ -60,7 +59,7 @@ contains
         !$OMP PRIVATE(delp, delm) 
         do j = jlo-1, jhi+1
            do i = ilo-1, ihi+1
-               do n = 1, NCONSVAR_NUMBER
+               do n = 1, NVAR_NUMBER
 
                   qm1 = solnVar(n,i-im, j-jm)
                   q = solnVar(n,i,j)
@@ -103,11 +102,11 @@ contains
                      end if
                   end if   
                   if (dir  == IAXIS) then
-                    x_plus(n,i,j) = fplus12
-                    x_minus(n,i,j) = fminus12
+                    recon_plus(dir,n,i,j) = fplus12
+                    recon_minus(dir,n,i,j) = fminus12
                   else if (dir == JAXIS) then
-                    y_plus(n,i,j) = fplus12
-                    y_minus(n,i,j) = fminus12
+                    recon_plus(dir,n,i,j) = fplus12
+                    recon_minus(dir,n,i,j) = fminus12
                   end if
                end do
            end do
@@ -118,15 +117,13 @@ contains
 
   end subroutine get_facevalue_weno
 
-  subroutine get_facevalue_weno5z(solnVar, x_plus, x_minus, y_plus, y_minus, check)
+  subroutine get_facevalue_weno5z(solnVar, recon_plus, recon_minus, check)
         use sim_data, only: ilo, ihi, jlo, jhi, iGlo, iGhi, jGlo, jGhi 
         implicit none
         real, dimension(1:, iGlo:, jGlo:), intent(in) :: solnVar
-        real, dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(inout) :: x_minus, x_plus, &
-                                                                                y_minus, y_plus
+        real, dimension(NDIM, NVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(inout) :: recon_minus, recon_plus
         logical, intent(in), optional :: check
 
-        real, dimension(1:5) :: qin
         real :: fplus12, fminus12
         real, parameter :: eps = 1.0e-36
         real, dimension(3) :: beta, alpha, alphabar, &
@@ -183,7 +180,7 @@ contains
         !$OMP PRIVATE(delp, delm)
         do j = jlo-1, jhi+1
            do i = ilo-1, ihi+1
-               do n = 1, NCONSVAR_NUMBER
+               do n = 1, NVAR_NUMBER
                   qm2 = solnVar(n,i-imm, j-jmm)
                   qm1 = solnVar(n,i-im, j-jm)
                   q = solnVar(n,i,j)
@@ -246,11 +243,11 @@ contains
                   end if
 
                   if (dir  == IAXIS) then
-                    x_plus(n,i,j) = fplus12
-                    x_minus(n,i,j) = fminus12
+                    recon_plus(dir,n,i,j) = fplus12
+                    recon_minus(dir,n,i,j) = fminus12
                   else if (dir == JAXIS) then
-                    y_plus(n,i,j) = fplus12
-                    y_minus(n,i,j) = fminus12
+                    recon_plus(dir,n,i,j) = fplus12
+                    recon_minus(dir,n,i,j) = fminus12
                   end if
                end do
            end do
@@ -260,32 +257,27 @@ contains
         end do  !dir
   end subroutine get_facevalue_weno5z
 
-  subroutine recon_getcellfaces(solnVar, x_plus, x_minus, y_plus, y_minus)
+  subroutine recon_getcellfaces(solnVar, recon_plus, recon_minus)
 
         use sim_data, only: xTpts, yTpts, dx, dy, gamma, ilo, ihi, jlo, jhi, & 
                             recon_method, iGlo, iGhi, jGlo, jGhi
         use misc_module, only: to_upper
         implicit none
         real, dimension(1:, iGlo:, jGlo:), intent(in) :: solnVar
-        real, dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(out) :: x_plus, x_minus, y_plus, y_minus
+        real, dimension(NDIM,NVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(out) :: recon_plus, recon_minus
         
         integer :: i, j, n
 
-        x_plus(:,:,:) = 0.0
-        x_minus(:,:,:) = 0.0
+        recon_plus(:,:,:,:) = 0.0
+        recon_minus(:,:,:,:) = 0.0
 
-        y_plus(:,:,:) = 0.0
-        y_minus(:,:,:) = 0.0
-        
-        !$OMP TARGET ENTER DATA MAP(ALWAYS, TO: solnVar) MAP(ALLOC: x_plus, x_minus, y_plus, y_minus)
+        !$OMP TARGET ENTER DATA MAP(ALWAYS, TO: solnVar) MAP(ALLOC: recon_plus, recon_minus)
         if (to_upper(trim(recon_method)) == "WENO3") then
-                call get_facevalue_weno(solnVar, &
-                                    x_plus, x_minus, y_plus, y_minus)
+                call get_facevalue_weno(solnVar, recon_plus, recon_minus)
         else if (to_upper(trim(recon_method)) == "WENO5") then
-                call get_facevalue_weno5z(solnVar, &
-                                    x_plus, x_minus, y_plus, y_minus)
+                call get_facevalue_weno5z(solnVar, recon_plus, recon_minus)
         end if
-        !$OMP TARGET EXIT DATA MAP(FROM: x_plus, x_minus, y_plus, y_minus)
+        !$OMP TARGET EXIT DATA MAP(FROM: recon_plus, recon_minus)
     end subroutine recon_getcellfaces
 
 end module recon_module
