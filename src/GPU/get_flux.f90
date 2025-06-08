@@ -63,7 +63,7 @@ contains
         !$OMP PRIVATE(dR, ufR, vfR, wfR, pR, eR) &
         !$OMP PRIVATE(sdR, sdL, cL, cR, qL, qR) &
         !$OMP PRIVATE(UL, UR, HL, HR, ubar, vbar, wbar, Hbar, cbar, qbar) &
-        !$OMP PRIVATE(SL, SR, FL, FR, Flux) 
+        !$OMP PRIVATE(SL, SR, FL, FR, Fstar, Flux) 
         do j = jlo, jhi + 1
            do i = ilo, ihi + 1
               dL  = recon_plus(dir,DENS_VAR,i-is,j-js)

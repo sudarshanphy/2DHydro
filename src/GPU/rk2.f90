@@ -63,7 +63,7 @@ contains
        end do
        nullify(solnVar)
 
-       !$OMP TARGET ENTER DATA MAP(ALLOC: recon_plus, recon_minus, xF, yF)
+       
        
        ! rk2 has 2 steps
        do k = 1, 2
@@ -71,12 +71,14 @@ contains
          solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
 
          !$OMP TARGET ENTER DATA MAP(ALWAYS, TO: solnVar)
+         !$OMP TARGET ENTER DATA MAP(ALLOC: recon_plus, recon_minus, xF, yF)
          
          call recon_getcellfaces(solnVar, &
                                  recon_plus, recon_minus)
          call riemann_solve(recon_plus, recon_minus, xF, yF)
 
-         !$OMP TARGET EXIT DATA MAP(FROM: xF, yF)
+         !$OMP TARGET EXIT DATA MAP(ALWAYS, FROM: xF, yF)
+         !$OMP TARGET EXIT DATA MAP(DELETE: recon_plus, recon_minus, xF, yF)
 
 #if 0               
          do j=jlo, jhi + 1
