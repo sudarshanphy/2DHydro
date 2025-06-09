@@ -24,7 +24,7 @@ subroutine read_par()
         recon_method = "weno3"; flux_solver = "hlle";
         xblk = 1; yblk = 1
  
-        open(no, file='./par_input.par')
+        open(no, file='./input.par')
 
         ! ios is negative if an end of record condition is encountered or if
         ! an endfile condition was detected.  It is positive if an error was
