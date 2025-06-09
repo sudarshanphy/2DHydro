@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#This bash script runs the python file in bin
+#Usage: ./setup [Options]
+#Option: +key=value (eg. +make=frontier)
+
+# Get directory where this script is located
+PYTHON_DIR=./bin/
+
+# Default Python interpreter
+PYTHON="python3"
+
+# Check if python3 exists, try python as fallback
+if ! command -v python3 &> /dev/null; then
+    if command -v python &> /dev/null; then
+        PYTHON="python"
+    else
+        echo "Error: Python not found. Please install Python 3."
+        exit 1
+    fi
+fi
+
+# Execute the Python configuration script with all arguments
+"$PYTHON" "$PYTHON_DIR/configure.py" "$@"
+
+# Capture and return the Python script's exit status
+exit $?

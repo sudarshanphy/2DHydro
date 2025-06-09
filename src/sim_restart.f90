@@ -4,7 +4,7 @@ module sim_restart
 contains
   subroutine restart_problem(fno, time)
     use sim_data, only: basenm, ilo, ihi, jlo, jhi, &
-                        mainVar, myrank
+                        mainVar, myrank, outdir
     implicit none
     integer, intent(in) :: fno
     real, intent(out) :: time
@@ -23,7 +23,7 @@ contains
    write(int_to_str, "(I4.4)") fno
    write(rank_to_str, "(I4.4)") myrank
 
-   fname = "./output/"//trim(adjustl(basenm))//"_"//trim(adjustl(rank_to_str))//&
+   fname = trim(adjustl(outdir))//"/"//trim(adjustl(basenm))//"_"//trim(adjustl(rank_to_str))//&
      "_"//trim(adjustl(int_to_str))//".dat"
 
    open(unit=ionum, file=fname, status="old")

@@ -1,30 +1,14 @@
 #compiler
-#FC=gfortran
 FC=ftn
 
-#flags for the compiler
 #flag for main runs
 FFLAGS=-fopenmp -s real64 -s integer32 -eI -eZ -ef -f free 
 
 #profiling
 #rocprof --stats --hsa-trace --hip-trace ./exec.exe
 
-
-# Define a variable to indicate whether we are building for MHD
-MHD ?= 0
-
-# Library to include based on the target
-#path for header file
-ifeq ($(MHD), 1)
-    HPATH=-I./src/MHD_h
-else
-    HPATH=-I./src/HD_h
-endif
-
 #files needed for compilation
 
-#SRC=misc.f90 recon.f90 eos.f90 hllc.f90 test_hllc.f90
-#SRC = io.f90 test_io.f90
 SRC = sim_data.f90 mpi_func.f90 misc.f90 \
 			read_par.f90 grid_func.f90 guardcell_fill.f90\
 			eos.f90 glm.f90 \
@@ -37,29 +21,16 @@ OBJ=${SRC:.f90=.o}
 #Loop (%) over *.f90 files to create *.o files
 #$@ represents the target files and $< represents the prerequisite files
 
-%.o: src/%.f90
-	$(FC) $(FFLAGS) $(HPATH) -c $< 
+%.o: %.f90
+	$(FC) $(FFLAGS) -c $< 
 
 #executable to be created
-EXEC=run_hd.exe
+EXEC=run.exe
 $(EXEC): $(OBJ)
-	$(FC) $(FFLAGS) $(HPATH) $(OBJ) -o $@
-	rm -f *.mod *.o *.i 
-
-#executable to be created
-EXEC2=run_mhd.exe
-$(EXEC2): $(OBJ)
-	$(FC) $(FFLAGS) $(OBJ) -o $@ 
-	rm -f *.mod *.o *.i 
+	$(FC) $(FFLAGS) $(OBJ) -o $@
+	@echo "Command to run on Frontier:"
+	@echo "stdbuf -o0 -e0 srun -N Nnodes -n Nprocs --ntasks-per-gpu=Ngpus ./$(EXEC)"
 
 #clean all the compiled file and executable
 clean:
 	rm -f *.mod *.o *.i
-cleanall:
-	rm -f *.mod *.o *.i *.exe
-cleandata:	
-	rm ./output/*.dat
-
-# Make executable for MHD run
-mhd:
-	$(MAKE) MHD=1 $(EXEC2)

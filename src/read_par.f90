@@ -22,7 +22,7 @@ subroutine read_par()
         problem = "none" 
         basenm = "def"; restart = .false.; usegrav = .false.;
         recon_method = "weno3"; flux_solver = "hlle";
-        xblk = 1; yblk = 1
+        xblk = 1; yblk = 1; outdir = "./"
  
         open(no, file='./input.par')
 
@@ -95,6 +95,8 @@ subroutine read_par()
                  read(buffer, *, iostat=ios) restart_no
               case ('restart_step')
                  read(buffer, *, iostat=ios) restart_step
+              case ('output_dir')
+                 read(buffer, *, iostat=ios) outdir
               case default
                 ! for comments on the paramter file                
               end select

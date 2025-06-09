@@ -11,17 +11,6 @@ FC=mpif90
 #flag for main runs
 FFLAGS=-O2 -Wall -cpp -fdefault-real-8
 
-# Define a variable to indicate whether we are building for MHD
-MHD ?= 0
-
-# Library to include based on the target
-#path for header file
-ifeq ($(MHD), 1)
-    HPATH=-I./src/MHD_h
-else
-    HPATH=-I./src/HD_h
-endif
-
 #files needed for compilation
 
 #SRC=misc.f90 recon.f90 eos.f90 hllc.f90 test_hllc.f90
@@ -38,29 +27,16 @@ OBJ=${SRC:.f90=.o}
 #Loop (%) over *.f90 files to create *.o files
 #$@ represents the target files and $< represents the prerequisite files
 
-%.o: src/%.f90
-	$(FC) $(FFLAGS) $(HPATH) -c $< 
+%.o: %.f90
+	$(FC) $(FFLAGS) -c $< 
 
 #executable to be created
-EXEC=run_hd.exe
+EXEC=run.exe
 $(EXEC): $(OBJ)
-	$(FC) $(FFLAGS) $(HPATH) $(OBJ) -o $@
-	rm -f *.mod *.o  
-
-#executable to be created
-EXEC2=run_mhd.exe
-$(EXEC2): $(OBJ)
-	$(FC) $(FFLAGS) $(OBJ) -o $@ 
-	rm -f *.mod *.o  
+	$(FC) $(FFLAGS) $(OBJ) -o $@
+	@echo "Command to run on Linux machine:"
+	@echo "mpirun -np Nprocs ./$(EXEC)"
 
 #clean all the compiled file and executable
 clean:
 	rm -f *.mod *.o
-cleanall:
-	rm -f *.mod *.o *.exe
-cleandata:	
-	rm ./output/*.dat
-
-# Make executable for MHD run
-mhd:
-	$(MAKE) MHD=1 $(EXEC2)

@@ -8,7 +8,7 @@ module sim_data
   integer, save :: nx, ny, Gpts, xTpts, yTpts, restart_no, &
                    restart_step 
   character(len=256), save :: xlbctype, ylbctype, xrbctype, yrbctype
-  character(len=256), save :: problem, &
+  character(len=256), save :: problem, outdir, &
                               basenm, recon_method, flux_solver
   logical, save :: restart, usegrav
   real(8), parameter :: PI = 4.0 * atan(1.0)

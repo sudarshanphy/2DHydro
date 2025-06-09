@@ -8,7 +8,7 @@ contains
    use sim_data, only: nx, ny, gamma, basenm, dx, dy, &
                        mainVar, ilo, ihi, jlo, jhi, &
                        myrank, xblk, yblk, lnx, lny, &
-                       iGlo, jGlo, iGhi, jGhi
+                       iGlo, jGlo, iGhi, jGhi, outdir
 
    use grid_func, only: get_coords
    implicit none
@@ -37,10 +37,10 @@ contains
   write(rank_to_str, "(I4.4)") myrank
 
   if (present(restart_init)) then
-    fname = "./output/"//trim(adjustl(basenm))//"_reinit_"//trim(adjustl(rank_to_str))//&
+    fname = trim(adjustl(outdir))//"/"//trim(adjustl(basenm))//"_reinit_"//trim(adjustl(rank_to_str))//&
       "_"//trim(adjustl(int_to_str))//".dat"
   else
-    fname = "./output/"//trim(adjustl(basenm))//"_"//trim(adjustl(rank_to_str))//&
+    fname = trim(adjustl(outdir))//"/"//trim(adjustl(basenm))//"_"//trim(adjustl(rank_to_str))//&
       "_"//trim(adjustl(int_to_str))//".dat"
   endif
 
