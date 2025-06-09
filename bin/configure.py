@@ -8,17 +8,21 @@ def parse_arguments():
     Returns a dictionary of arguments with default values.
 
     Defaults:
+        simulation: 'sedov'
         make: 'linux'
         objdir: 'build'
         runtype: 'hd'
-        offload: 'cpu'
+        gpu: 'false'
+        io: 'true'
     """
     # Define default values for all possible arguments
     defaults = {
+        'simulation': 'sedov',
         'make': 'linux',
         'objdir': 'build',
         'runtype': 'hd',
-        'offload': 'cpu'
+        'gpu': 'false',
+        'io': 'true'
     }
 
     # Parse command-line arguments, overriding defaults
@@ -47,28 +51,56 @@ def validate_paths(args):
         shutil.rmtree(objdir)
     os.makedirs(objdir)
 
-    return site_makefile, objdir
+    #Build module implementation map
+    module_impls = {}
+    
+    for module, impl in args.items():
+        if module not in ['make', 'objdir', 'runtype', 'gpu', 'io']:
+            module_dir = os.path.join('src', module.upper())
+            impl_dir = os.path.join(module_dir, f"{impl}")
+
+            if not os.path.isdir(impl_dir):
+                raise FileNotFoundError(
+                    f"Implementation folder not found for {module}: {impl_dir}\n"
+                )
+            module_impls[module] = impl_dir
+    
+    return site_makefile, objdir, module_impls
 
 
-def copy_files(objdir, args):
+def copy_src_files(objdir, module_impls, args):
     src_dir = "src"
+    
     dest_dir = objdir
     for root, dirs, files in os.walk(src_dir):
+        # Skip hidden directories
+        dirs[:] = [d for d in dirs if not d.startswith('.')]
         # Create corresponding destination directory
         rel_path = os.path.relpath(root, src_dir)
         dest_path = os.path.join(objdir)
-        #print(root)
-        #print(dirs)
-        #print(files)
-        #print(rel_path)
-        #print(dest_path)
-        #print("------------------")
+
+        #List of directories don't have any sub directory inside "src"
+        NoSubDir = ["GPU", "IO", "HD_h", "MHD_h"]
+        Keys = ["gpu","io","runtype","runtype"]
+        value = ["true","true","hd","mhd"]
+        
+        # Copy all the files from root directories
         if (root == src_dir):
             for file in files:
                 src_file = os.path.join(root, file)
                 dest_file = os.path.join(dest_path, file)
                 #print(src_file, dest_file)
                 shutil.copy(src_file, dest_path)
+        # Loop over these directories with no sub-directories
+        # And copy over the files
+        for kk in range(len(NoSubDir)):
+            if ((args[Keys[kk]]) == value[kk]) and (rel_path == NoSubDir[kk]):
+                for file in files:
+                    src_file = os.path.join(root, file)
+                    dest_file = os.path.join(dest_path,file)
+                    shutil.copy(src_file, dest_file)
+                
+        '''        
         if ((args['runtype'] == "hd") and (rel_path == "HD_h")):
             for file in files:
                 src_file = os.path.join(root, file)
@@ -84,7 +116,20 @@ def copy_files(objdir, args):
                 src_file = os.path.join(root, file)
                 dest_file = os.path.join(dest_path,file)
                 shutil.copy(src_file, dest_file)
-           
+        '''
+        if (rel_path == "SIMULATION"):
+            for file in files:
+                src_file = os.path.join(root, file)
+                dest_file = os.path.join(dest_path,file)
+                shutil.copy(src_file, dest_file)
+            for thisDir, subDir, files in os.walk(root):
+                if (thisDir == module_impls['simulation']):
+                    for file in files:
+                        src_file = os.path.join(thisDir, file)
+                        dest_file = os.path.join(dest_path,file)
+                        shutil.copy(src_file, dest_file)
+                        
+             
     return
 
        
@@ -98,12 +143,12 @@ def main():
             print(f"  {k}: {v}")
 
         # Validate paths and get module implementations
-        site_makefile, objdir = validate_paths(args)
+        site_makefile, objdir, module_impls = validate_paths(args)
 
         # Copy Makefile
         shutil.copy(site_makefile, os.path.join(objdir, 'Makefile'))
 
-        copy_files(objdir, args)
+        copy_src_files(objdir, module_impls, args)
 
         print("\nBuild configuration completed successfully!")
         print(f"Object directory: {objdir}")

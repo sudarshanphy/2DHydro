@@ -4,7 +4,7 @@ program hydro
   use sim_data
   use grid_func
   use sim_init, only: init_problem
-  use sim_restart, only: restart_problem
+  use io_restart, only: restart_problem
   use io_module, only: write_output
   use applyBC_module, only: applyBC_all
   use rk2_module, only: RK2_SSP

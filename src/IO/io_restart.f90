@@ -1,4 +1,4 @@
-module sim_restart
+module io_restart
 #include "param.h"
   implicit none
 contains
@@ -50,4 +50,4 @@ contains
   
    nullify(solnVar)
   end subroutine restart_problem
-end module sim_restart
+end module io_restart
