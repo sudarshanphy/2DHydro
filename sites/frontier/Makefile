@@ -3,13 +3,7 @@
 FC=ftn
 
 #flags for the compiler
-#flag for profiler
-#FFLAGS=-pg -Wall -cpp -fdefault-real-8 
-#flag for debug mode
-#FFLAGS=-g -Wall -cpp -fdefault-real-8 
-#FFLAGS+=-ffpe-trap=zero,overflow,underflow,invalid,denormal
 #flag for main runs
-#FFLAGS=-O2 -Wall -cpp -fdefault-real-8
 FFLAGS=-fopenmp -s real64 -s integer32 -eI -eZ -ef -f free 
 
 #profiling
