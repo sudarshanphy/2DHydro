@@ -2,7 +2,7 @@
 FC=ftn
 
 #flag for main runs
-FFLAGS=-s real64 -s integer32 -eI -eZ -ef -f free 
+FFLAGS=-fopenmp -s real64 -s integer32 -eI -eZ -ef -f free 
 
 #profiling
 #rocprof --stats --hsa-trace --hip-trace ./exec.exe
@@ -29,7 +29,7 @@ EXEC=run.exe
 $(EXEC): $(OBJ)
 	$(FC) $(FFLAGS) $(OBJ) -o $@
 	@echo "Command to run on Frontier:"
-	@echo "stdbuf -o0 -e0 srun -N Nnodes -n Nprocs ./$(EXEC)"
+	@echo "stdbuf -o0 -e0 srun -N Nnodes -n Nprocs --ntasks-per-gpu=Ngpus ./$(EXEC)"
 
 #clean all the compiled file and executable
 clean:

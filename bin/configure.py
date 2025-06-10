@@ -9,20 +9,22 @@ def parse_arguments():
 
     Defaults:
         simulation: 'sedov'
+        hydro: 'rk2'
         make: 'linux'
         objdir: 'build'
-        runtype: 'hd'
+        run: 'hd'
         gpu: 'false'
-        io: 'true'
+        io: 'ascii'
     """
     # Define default values for all possible arguments
     defaults = {
         'simulation': 'sedov',
+        'hydro': 'rk2',
         'make': 'linux',
         'objdir': 'build',
-        'runtype': 'hd',
+        'run': 'hd',
         'gpu': 'false',
-        'io': 'true'
+        'io': 'ascii'
     }
 
     # Parse command-line arguments, overriding defaults
@@ -42,8 +44,11 @@ def validate_paths(args):
     # Validate Makefile location
     site_dir = os.path.join(FilePath+'sites', args['make'])
     site_makefile = os.path.join(site_dir, 'Makefile')
+    # if we are using gpu for our run
+    if (args['gpu'] == "true"):
+        site_makefile = os.path.join(site_dir, 'Makefile.gpu')
     if not os.path.exists(site_makefile):
-        raise FileNotFoundError(f"Makefile not found in site directory: {site_dir}")
+        raise FileNotFoundError(f"Makefile not found: {site_makefile}")
     
     # Create object directory if needed
     objdir = FilePath+args['objdir']
@@ -55,7 +60,7 @@ def validate_paths(args):
     module_impls = {}
     
     for module, impl in args.items():
-        if module not in ['make', 'objdir', 'runtype', 'gpu', 'io']:
+        if module not in ['make', 'objdir', 'run', 'gpu']:
             module_dir = os.path.join('src', module.upper())
             impl_dir = os.path.join(module_dir, f"{impl}")
 
@@ -80,54 +85,47 @@ def copy_src_files(objdir, module_impls, args):
         dest_path = os.path.join(objdir)
 
         #List of directories don't have any sub directory inside "src"
-        NoSubDir = ["GPU", "IO", "HD_h", "MHD_h"]
-        Keys = ["gpu","io","runtype","runtype"]
-        value = ["true","true","hd","mhd"]
+        NoSubDir = ["GPU", "HD_h", "MHD_h"]
+        Keys = ["gpu","run","run"]
+        value = ["true","hd","mhd"]
+
+        #List of directoires with sub-directory and implementation
+        SubDirList = ["SIMULATION", "HYDRO", "IO"]
         
         # Copy all the files from root directories
         if (root == src_dir):
             for file in files:
+                
                 src_file = os.path.join(root, file)
                 dest_file = os.path.join(dest_path, file)
                 #print(src_file, dest_file)
                 shutil.copy(src_file, dest_path)
+                print(f"Copied: {src_file}")
         # Loop over these directories with no sub-directories
         # And copy over the files
         for kk in range(len(NoSubDir)):
             if ((args[Keys[kk]]) == value[kk]) and (rel_path == NoSubDir[kk]):
                 for file in files:
+                    
                     src_file = os.path.join(root, file)
                     dest_file = os.path.join(dest_path,file)
                     shutil.copy(src_file, dest_file)
-                
-        '''        
-        if ((args['runtype'] == "hd") and (rel_path == "HD_h")):
-            for file in files:
-                src_file = os.path.join(root, file)
-                dest_file = os.path.join(dest_path,file)
-                shutil.copy(src_file, dest_file)
-        if ((args['runtype'] == "mhd") and (rel_path == "MHD_h")):
-            for file in files:
-                src_file = os.path.join(root, file)
-                dest_file = os.path.join(dest_path,file)
-                shutil.copy(src_file, dest_file)
-        if ((args['offload'] == "gpu") and (rel_path == "GPU")):
-            for file in files:
-                src_file = os.path.join(root, file)
-                dest_file = os.path.join(dest_path,file)
-                shutil.copy(src_file, dest_file)
-        '''
-        if (rel_path == "SIMULATION"):
-            for file in files:
-                src_file = os.path.join(root, file)
-                dest_file = os.path.join(dest_path,file)
-                shutil.copy(src_file, dest_file)
-            for thisDir, subDir, files in os.walk(root):
-                if (thisDir == module_impls['simulation']):
-                    for file in files:
-                        src_file = os.path.join(thisDir, file)
-                        dest_file = os.path.join(dest_path,file)
-                        shutil.copy(src_file, dest_file)
+                    print(f"Copied: {src_file}")
+                    
+        for ii in SubDirList:
+            if (rel_path == ii.upper()):
+                for file in files:
+                    src_file = os.path.join(root, file)
+                    dest_file = os.path.join(dest_path,file)
+                    shutil.copy(src_file, dest_file)
+                    print(f"Copied: {src_file}")
+                for thisDir, subDir, files in os.walk(root):
+                    if (thisDir == module_impls[ii.lower()]):
+                        for file in files:
+                            src_file = os.path.join(thisDir, file)
+                            dest_file = os.path.join(dest_path,file)
+                            shutil.copy(src_file, dest_file)
+                            print(f"Copied: {src_file}")
                         
              
     return
@@ -147,6 +145,7 @@ def main():
 
         # Copy Makefile
         shutil.copy(site_makefile, os.path.join(objdir, 'Makefile'))
+        print(f"Copied: {site_makefile} as Makefile")
 
         copy_src_files(objdir, module_impls, args)
 
