@@ -29,6 +29,12 @@ def parse_arguments():
 
     # Parse command-line arguments, overriding defaults
     for arg in sys.argv[1:]:
+        # If user wants to know about configuration setting
+        if arg.startswith('-') and (("help" in arg) or ("h" in arg)):
+            print("Following are the setup default configurations:")
+            print(defaults)
+            print("Run as: ./setup +key=value")
+            sys.exit(1)
         if arg.startswith('+') and '=' in arg:
             key, value = arg[1:].split('=', 1)
             if key in defaults:  # Only accept known keys
