@@ -16,8 +16,8 @@ mpl.rcParams['font.family'] = 'DeJavu Serif'
 mpl.rcParams['font.serif'] = ['Times New Roman']
 mpl.rcParams['font.size'] = 20.0
 
-def get_blk_info(basenm, fieldname):
-    fname = "../output/"+basenm+"_0000_0000.dat"
+def get_blk_info(basenm, fieldname, num):
+    fname = "../output/"+basenm+"_0000_%04d.dat"%(num)
     f = open(fname, "r")
     lines = f.readlines()[0:7]
     linem1 = lines[1]
@@ -45,7 +45,7 @@ def get_blk_info(basenm, fieldname):
 
 def get_data(basenm, num, fieldname):
 
-    nx, ny, lnx, lny, xblk, yblk, index = get_blk_info(basenm, fieldname)
+    nx, ny, lnx, lny, xblk, yblk, index = get_blk_info(basenm, fieldname, num)
     # get all the file names
     fnames = []
     count = 0

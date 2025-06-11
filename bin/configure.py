@@ -15,6 +15,7 @@ def parse_arguments():
         run: 'hd'
         gpu: 'false'
         io: 'txt'
+        grid: 'ug'
     """
     # Define default values for all possible arguments
     defaults = {
@@ -24,7 +25,8 @@ def parse_arguments():
         'objdir': 'build',
         'run': 'hd',
         'gpu': 'false',
-        'io': 'txt'
+        'io': 'txt', 
+        'grid': 'ug'
     }
 
     # Parse command-line arguments, overriding defaults
@@ -95,13 +97,22 @@ def copy_src_files(objdir, module_impls, args):
         rel_path = os.path.relpath(root, src_dir)
         dest_path = os.path.join(objdir)
 
+        # Copy all files from the COMMON directory
+        if (rel_path == "COMMON"):
+            for file in files:
+                src_file = os.path.join(root, file)
+                dest_file = os.path.join(dest_path,file)
+                shutil.copy(src_file, dest_file)
+                print(f"Copied: {src_file}")
+
+
         #List of directories don't have any sub directory inside "src"
         NoSubDir = ["HD_h", "MHD_h"]
         Keys = ["run","run"]
         value = ["hd","mhd"]
 
         #List of directoires with sub-directory and implementation
-        SubDirList = ["SIMULATION", "HYDRO", "IO"]
+        SubDirList = ["SIMULATION", "HYDRO", "IO", "GRID"]
         
         # Copy all the files from root directories
         if (root == src_dir):
