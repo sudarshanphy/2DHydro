@@ -83,6 +83,7 @@ contains
         !$OMP PRIVATE(dL, ufL, vfL, wfL, pL, eL) &
         !$OMP PRIVATE(dR, ufR, vfR, wfR, pR, eR) &
         !$OMP PRIVATE(sdR, sdL, cL, cR, qL, qR) &
+        !$OMP PRIVATE(udL, udR, vdL, vdR, wdL, wdR) &
         !$OMP PRIVATE(HL, HR, ubar, vbar, wbar, Hbar, cbar, qbar) &
         !$OMP PRIVATE(dstarL, dstarR, pstar, dustarL, dustarR, dvstarL, dvstarR) &
         !$OMP PRIVATE(dwstarL, dwstarR, estarL, estarR) &
