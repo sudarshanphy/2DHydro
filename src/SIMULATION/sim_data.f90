@@ -5,6 +5,7 @@ module sim_data
   real(8), save :: xmin, xmax, ymin, ymax, dx, dy
   real(8), save :: t0, tf, dt, out_dt
   real(8), save :: gamma, cfl, grav
+  real(8), save :: smalld, smallp, smalle, small
   integer, save :: nx, ny, Gpts, xTpts, yTpts, restart_no, &
                    restart_step 
   character(len=256), save :: xlbctype, ylbctype, xrbctype, yrbctype

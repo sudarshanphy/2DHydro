@@ -14,7 +14,7 @@ def parse_arguments():
         objdir: 'build'
         run: 'hd'
         gpu: 'false'
-        io: 'ascii'
+        io: 'txt'
     """
     # Define default values for all possible arguments
     defaults = {
@@ -24,7 +24,7 @@ def parse_arguments():
         'objdir': 'build',
         'run': 'hd',
         'gpu': 'false',
-        'io': 'ascii'
+        'io': 'txt'
     }
 
     # Parse command-line arguments, overriding defaults
@@ -33,6 +33,11 @@ def parse_arguments():
             key, value = arg[1:].split('=', 1)
             if key in defaults:  # Only accept known keys
                 defaults[key] = value
+            else:
+                print(f"Ignored +{key} = {value} as {key} is not recognized!")
+    # Use correct subdirectory while using GPU
+    if defaults['gpu'] == "true":
+        defaults['hydro'] = defaults['hydro'] + '_gpu'
     return defaults
 
 def validate_paths(args):
@@ -85,9 +90,9 @@ def copy_src_files(objdir, module_impls, args):
         dest_path = os.path.join(objdir)
 
         #List of directories don't have any sub directory inside "src"
-        NoSubDir = ["GPU", "HD_h", "MHD_h"]
-        Keys = ["gpu","run","run"]
-        value = ["true","hd","mhd"]
+        NoSubDir = ["HD_h", "MHD_h"]
+        Keys = ["run","run"]
+        value = ["hd","mhd"]
 
         #List of directoires with sub-directory and implementation
         SubDirList = ["SIMULATION", "HYDRO", "IO"]

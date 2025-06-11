@@ -57,6 +57,12 @@ module grid_func
     lymax = ymin + jhi * dx
   
     allocate(mainVar(NVAR_NUMBER, iGlo:iGhi, jGlo:jGhi))
+
+    !set all the small values
+    smalld = 1.0e-10
+    smallp = 1.0e-10
+    smalle = 1.0e-10
+    small = 1.0e-100
  
     !print *, "myrank, xl, xr, yl, yr = ", myrank, at_xlboundary, at_xrboundary, &
     !                                              at_ylboundary, at_yrboundary 
@@ -77,9 +83,9 @@ module grid_func
     implicit none
     character(len=1), intent(in) :: Dir
     integer, intent(in) :: lo, hi
-    real, dimension(lo:hi), intent(out) :: array
+    real(8), dimension(lo:hi), intent(out) :: array
     integer :: ii
-    real :: delta, lmin
+    real(8) :: delta, lmin
     
     array(lo:hi) = 0.0
  

@@ -16,8 +16,8 @@ mpl.rcParams['font.family'] = 'DeJavu Serif'
 mpl.rcParams['font.serif'] = ['Times New Roman']
 mpl.rcParams['font.size'] = 20.0
 
-def get_blk_info(basenm, fieldname):
-    fname = "../output/"+basenm+"_0000_0000.dat"
+def get_blk_info(outdir, basenm, fieldname, num):
+    fname = outdir+basenm+"_0000_%04d.dat"%(num)
     f = open(fname, "r")
     lines = f.readlines()[0:7]
     linem1 = lines[1]
@@ -43,11 +43,12 @@ def get_blk_info(basenm, fieldname):
     return [nx, ny, lnx, lny, xblk, yblk, index]
 
 
-basenm = "sedov_test_x2_y2"
-num = 11
+basenm = "lw_new4_test_x4_y4"
+outputdir = "../output_lw/"
+num = int(sys.argv[1])
 fieldname = "dens"
 
-nx, ny, lnx, lny, xblk, yblk, index = get_blk_info(basenm, fieldname)
+nx, ny, lnx, lny, xblk, yblk, index = get_blk_info(outputdir, basenm, fieldname, num)
 
 
 # get all the file names
@@ -64,7 +65,7 @@ y_array = []
 data2d = np.zeros((nx,ny))
 
 for kk,file in enumerate(fnames):
-    f = open("../output/"+file, "r")
+    f = open(outputdir+file, "r")
     #print(f)
     lines = f.readlines()
     
@@ -98,7 +99,8 @@ dmin = np.min(data2d)
 dmax = np.max(data2d)
 
 print(dmin, dmax)
-
+#dmin = 0.2
+#dmin = 1.5
 
 fig = plt.figure(num = basenm, figsize=(12,12)) # , layout='constrained')
 ax = plt.axes()
@@ -111,6 +113,7 @@ ax.set_aspect('equal', adjustable='box')
 # this somehow makes the colorbar scale match with the y height
 plt.colorbar(label=fieldname,fraction=0.046, pad=0.04)
 
-
-#plt.savefig("pres_otmhd_x2_2_%04d.png"%(num), dpi=144)   
-plt.show()
+outname = "new4_dens_lw_%04d.png"%(num)
+plt.savefig(outname, dpi=144)   
+print(f"Saved {outname}")
+#plt.show()

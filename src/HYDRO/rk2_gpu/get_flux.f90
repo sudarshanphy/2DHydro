@@ -8,7 +8,8 @@ module flux_module
 contains
 
     subroutine riemann_solve(recon_plus, recon_minus, xF, yF)
-        use sim_data, only: gamma, iGlo, iGhi, jGlo, jGhi, jlo, jhi, ilo, ihi
+        use sim_data, only: gamma, iGlo, iGhi, jGlo, jGhi, jlo, jhi, ilo, ihi, &
+                            smalld, smalle, smallp
 #ifdef MHD
         use sim_data, only: ch
 #endif
@@ -57,7 +58,7 @@ contains
         end select
         
         !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(2) &
-        !$OMP MAP(TO: n, gamma) &
+        !$OMP MAP(TO: n, gamma, smalld, smallp, smalle) &
         !$OMP FIRSTPRIVATE(dir, id, ips, ibn, is, js) &
         !$OMP PRIVATE(dL, ufL, vfL, wfL, pL, eL) &
         !$OMP PRIVATE(dR, ufR, vfR, wfR, pR, eR) &
@@ -73,37 +74,39 @@ contains
         !$OMP PRIVATE(UL, UR, SL, SR, FL, FR, Fstar, Flux) 
         do j = jlo, jhi + 1
            do i = ilo, ihi + 1
-              dL  = recon_plus(dir,DENS_VAR,i-is,j-js)
+              dL  = max(recon_plus(dir,DENS_VAR,i-is,j-js), smalld)
               ufL = recon_plus(dir,VELX_VAR,i-is,j-js)
               vfL = recon_plus(dir,VELY_VAR,i-is,j-js)
               wfL = recon_plus(dir,VELZ_VAR,i-is,j-js)
-              pL  = recon_plus(dir,PRES_VAR,i-is,j-js)
+              pL  = max(recon_plus(dir,PRES_VAR,i-is,j-js), smallp)
               !eL  = recon_plus(dir,ENER_VAR,i-is,j-js)
               ! apply eos since we can
               eL = pL/(gamma - 1.0) + 0.5 * (dL * (ufL**2 + vfL**2 + wfL**2))
+              eL = max(eL, smalle)
               !eL = recon_plus(dir,ENER_VAR,i-is,j-js) + 0.5 * (dL * (ufL**2 + vfL**2 + wfL**2))
 
-              dR  = recon_minus(dir,DENS_VAR,i,j)
+              dR  = max(recon_minus(dir,DENS_VAR,i,j), smalld)
               ufR = recon_minus(dir,VELX_VAR,i,j)
               vfR = recon_minus(dir,VELY_VAR,i,j)
               wfR = recon_minus(dir,VELZ_VAR,i,j)
-              pR  = recon_minus(dir,PRES_VAR,i,j)
+              pR  = max(recon_minus(dir,PRES_VAR,i,j), smallp)
               !eR  = recon_minus(dir,ENER_VAR,i,j)
               ! apply eos since we can
               eR = pR/(gamma - 1.0) + 0.5 * (dR * (ufR**2 + vfR**2 + wfR**2))
+              eR = max(eR, smalle)
               !eR = recon_minus(dir,ENER_VAR,i,j) + 0.5 * (dR * (ufR**2 + vfR**2 + wfR**2))
 #ifdef MHD
               bxL = recon_plus(dir,BMFX_VAR,i-is,j-js)
               byL = recon_plus(dir,BMFY_VAR,i-is,j-js)
               bzL = recon_plus(dir,BMFZ_VAR,i-is,j-js)
               bpL = recon_plus(dir,BPSI_VAR,i-is,j-js)
-              eL = eL + 0.5*(bxL*bxL + byL*byL + bzL*bzL)
+              eL = max(eL + 0.5*(bxL*bxL + byL*byL + bzL*bzL), smalle)
                                              
               bxR = recon_minus(dir,BMFX_VAR,i,j)                
               byR = recon_minus(dir,BMFY_VAR,i,j)
               bzR = recon_minus(dir,BMFZ_VAR,i,j)
               bpR = recon_minus(dir,BPSI_VAR,i,j)
-              eR = eR + 0.5*(bxR*bxR + byR*byR + bzR*bzR)
+              eR = max(eR + 0.5*(bxR*bxR + byR*byR + bzR*bzR), smalle)
 #endif
          
               sdR = sqrt(dR)

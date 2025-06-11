@@ -14,7 +14,7 @@ contains
        use sim_data, only: grav, usegrav, ilo, ihi, jlo, jhi, &
                            dx, dy, &
                            flux_solver, mainVar, iGlo, jGlo, iGhi, &
-                           jGhi
+                           jGhi, smalld, smallp, smalle
 
        use applyBC_module, only: applyBC_all 
        use misc_module, only: to_upper
@@ -43,17 +43,17 @@ contains
 
        do j = jGlo, jGhi
          do i = iGlo, iGhi
-           Up1(DENS_CONS,i,j) = solnVar(DENS_VAR,i,j) 
+           Up1(DENS_CONS,i,j) = max(solnVar(DENS_VAR,i,j), smalld) 
            Up1(MOMX_CONS:MOMZ_CONS,i,j) = solnVar(DENS_VAR,i,j) * solnVar(VELX_VAR:VELZ_VAR,i,j)
-           Up1(ENER_CONS,i,j) = solnVar(ENER_VAR,i,j)
+           Up1(ENER_CONS,i,j) = max(solnVar(ENER_VAR,i,j), smalle)
 
 #ifdef MHD
            Up1(BMFX_CONS:BMFZ_CONS,i,j) = solnVar(BMFX_VAR:BMFZ_VAR,i,j)
            Up1(BPSI_CONS,i,j) = solnVar(BPSI_VAR,i,j)
 #endif
-           U(DENS_CONS,i,j) = solnVar(DENS_VAR,i,j) 
+           U(DENS_CONS,i,j) = max(solnVar(DENS_VAR,i,j), smalld) 
            U(MOMX_CONS:MOMZ_CONS,i,j) = solnVar(DENS_VAR,i,j) * solnVar(VELX_VAR:VELZ_VAR,i,j)
-           U(ENER_CONS,i,j) = solnVar(ENER_VAR,i,j)
+           U(ENER_CONS,i,j) = max(solnVar(ENER_VAR,i,j), smalle)
 
 #ifdef MHD
            U(BMFX_CONS:BMFZ_CONS,i,j) = solnVar(BMFX_VAR:BMFZ_VAR,i,j)
@@ -134,14 +134,15 @@ contains
                             + dt * sgrav(:)
 
                ! get primitive quantities
-               solnVar(DENS_VAR,i,j) = Up1(DENS_CONS,i,j)
+               solnVar(DENS_VAR,i,j) = max(Up1(DENS_CONS,i,j), smalld)
                solnVar(VELX_VAR:VELZ_VAR,i,j) = Up1(MOMX_CONS:MOMZ_CONS,i,j)/Up1(DENS_CONS,i,j)
-               solnVar(ENER_VAR,i,j) = Up1(ENER_CONS,i,j)
+               solnVar(ENER_VAR,i,j) = max(Up1(ENER_CONS,i,j), smalle)
 #ifdef MHD                        
                solnVar(BMFX_VAR:BMFZ_VAR,i,j) = Up1(BMFX_CONS:BMFZ_CONS,i,j) 
                solnVar(BPSI_VAR,i,j) = Up1(BPSI_CONS,i,j)
 #endif
                call eos_getp(solnVar(:,i,j))
+               solnVar(PRES_VAR,i,j) = max(solnVar(PRES_VAR,i,j), smallp)
             end do
           end do
           nullify(solnVar)
@@ -155,9 +156,9 @@ contains
 
        do j = jGlo, jGhi
          do i = iGlo, iGhi
-           Up1(DENS_CONS,i,j) = solnVar(DENS_VAR,i,j) 
+           Up1(DENS_CONS,i,j) = max(solnVar(DENS_VAR,i,j), smalld) 
            Up1(MOMX_CONS:MOMZ_CONS,i,j) = solnVar(DENS_VAR,i,j) * solnVar(VELX_VAR:VELZ_VAR,i,j)
-           Up1(ENER_CONS,i,j) = solnVar(ENER_VAR,i,j)
+           Up1(ENER_CONS,i,j) = max(solnVar(ENER_VAR,i,j), smalle)
 
 #ifdef MHD
            Up1(BMFX_CONS:BMFZ_CONS,i,j) = solnVar(BMFX_VAR:BMFZ_VAR,i,j)
@@ -176,14 +177,15 @@ contains
            Up1(:,i,j) = 0.5e0 * (U(:,i,j) + Up1(:,i,j))
 
            ! get primitive quantities
-           solnVar(DENS_VAR,i,j) = Up1(DENS_CONS,i,j)
+           solnVar(DENS_VAR,i,j) = max(Up1(DENS_CONS,i,j), smalld)
            solnVar(VELX_VAR:VELZ_VAR,i,j) = Up1(MOMX_CONS:MOMZ_CONS,i,j)/Up1(DENS_CONS,i,j)
-           solnVar(ENER_VAR,i,j) = Up1(ENER_CONS,i,j)
+           solnVar(ENER_VAR,i,j) = max(Up1(ENER_CONS,i,j), smalle)
 #ifdef MHD                    
            solnVar(BMFX_VAR:BMFZ_VAR,i,j) = Up1(BMFX_CONS:BMFZ_CONS,i,j) 
            solnVar(BPSI_VAR,i,j) = Up1(BPSI_CONS,i,j)
 #endif
            call eos_getp(solnVar(:,i,j))
+           solnVar(PRES_VAR,i,j) = max(solnVar(PRES_VAR,i,j), smallp)
 
          end do
        end do
