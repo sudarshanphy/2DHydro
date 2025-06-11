@@ -4,20 +4,14 @@ module rk2_module
 contains
 
     subroutine RK2_SSP(dt)
-#ifndef MHD       
-       use flux_module, only: hllc,hlle, riemann_solve
-#else
-       use flux_module, only: hlle, hlld, riemann_solve
-#endif
+       use flux_module, only: riemann_solve
        use recon_module, only: recon_getcellfaces
        use eos_module, only: eos_getp
        use sim_data, only: grav, usegrav, ilo, ihi, jlo, jhi, &
-                           dx, dy, &
-                           flux_solver, mainVar, iGlo, jGlo, iGhi, &
+                           dx, dy, mainVar, iGlo, jGlo, iGhi, &
                            jGhi, smalld, smallp, smalle
 
        use applyBC_module, only: applyBC_all 
-       use misc_module, only: to_upper
        use guard_func, only: guardcell_fill
        implicit none
        real, pointer :: solnVar(:,:,:)
@@ -63,8 +57,6 @@ contains
        end do
        nullify(solnVar)
 
-       
-       
        ! rk2 has 2 steps
        do k = 1, 2
          ! use the updated solution for the next step
@@ -80,46 +72,6 @@ contains
          !$OMP TARGET EXIT DATA MAP(ALWAYS, FROM: xF, yF)
          !$OMP TARGET EXIT DATA MAP(DELETE: recon_plus, recon_minus, xF, yF)
 
-#if 0               
-         do j=jlo, jhi + 1
-            do i = ilo, ihi + 1
-
-               do n = 1, NCONSVAR_NUMBER
-                 Uleft(n)  = recon_plus(1,n,i-1,j)
-                 Uright(n) = recon_minus(1,n,i,j)
-                 Vleft(n)  = recon_plus(2,n,i,j-1)
-                 Vright(n) = recon_minus(2,n,i,j)
-               end do
-
-              if (to_upper(trim(flux_solver)) == "HLLC") then
-#ifndef MHD
-                call hllc(Uleft, Uright, "x", xF(:,i,j))
-                call hllc(Vleft, Vright, "y", yF(:,i,j))
-#else
-                print *, "HLLC is only for pure Hydro simulation"
-                stop
-#endif
-              else if (to_upper(trim(flux_solver)) == "HLLE") then
-                call hlle(Uleft, Uright, "x", xF(:,i,j))
-                call hlle(Vleft, Vright, "y", yF(:,i,j))
-              else if (to_upper(trim(flux_solver)) == "HLLD") then
-#ifdef MHD
-                call hlld(Uleft, Uright, "x", xF(:,i,j))
-                call hlld(Vleft, Vright, "y", yF(:,i,j))
-#else
-                print *, "HLLD is only for MHD simulation"
-                stop
-#endif
-              else
-                print *, "Available solvers:"
-                print *, "HLLE/HLLC -> Hydro"
-                print *, "HLLE/HLLD -> MHD"
-                stop
-              end if
-               
-            end do
-          end do
-#endif             
           do j=jlo, jhi
             do i = ilo, ihi
 #ifdef MHD

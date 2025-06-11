@@ -219,8 +219,8 @@ contains
                   qplus12 = omega(1)*qpluspoly(1) + omega(2)*qpluspoly(2) + &
                             omega(3)*qpluspoly(3)
                   !dot_product(omega(1:3), qpluspoly(1:3)) 
-                  qminus12 = omega(1)*qminuspoly(1) + omega(2)*qminuspoly(2) + &
-                             omega(3)*qminuspoly(3)
+                  qminus12 = omegabar(1)*qminuspoly(1) + omegabar(2)*qminuspoly(2) + &
+                             omegabar(3)*qminuspoly(3)
                   !dot_product(omegabar(1:3), qminuspoly(1:3)) 
 
                   fplus12 = qplus12

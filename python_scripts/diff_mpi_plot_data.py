@@ -16,8 +16,8 @@ mpl.rcParams['font.family'] = 'DeJavu Serif'
 mpl.rcParams['font.serif'] = ['Times New Roman']
 mpl.rcParams['font.size'] = 20.0
 
-def get_blk_info(basenm, fieldname, num):
-    fname = "../output/"+basenm+"_0000_%04d.dat"%(num)
+def get_blk_info(outdir,basenm, fieldname, num):
+    fname = outdir+basenm+"_0000_%04d.dat"%(num)
     f = open(fname, "r")
     lines = f.readlines()[0:7]
     linem1 = lines[1]
@@ -43,9 +43,9 @@ def get_blk_info(basenm, fieldname, num):
     return [nx, ny, lnx, lny, xblk, yblk, index]
 
 
-def get_data(basenm, num, fieldname):
+def get_data(outdir,basenm, num, fieldname):
 
-    nx, ny, lnx, lny, xblk, yblk, index = get_blk_info(basenm, fieldname, num)
+    nx, ny, lnx, lny, xblk, yblk, index = get_blk_info(outdir,basenm, fieldname, num)
     # get all the file names
     fnames = []
     count = 0
@@ -60,7 +60,7 @@ def get_data(basenm, num, fieldname):
     data2d = np.zeros((nx,ny))
 
     for kk,file in enumerate(fnames):
-        f = open("../output/"+file, "r")
+        f = open(outdir+file, "r")
         #print(f)
         lines = f.readlines()
         
@@ -88,13 +88,14 @@ def get_data(basenm, num, fieldname):
     return [x_array, y_array, data2d]
 
 
-basenm1 = "sedov_newrecon_test_x2_y2"
-basenm2 = "sedov_test_x2_y2"
-num = 11
+basenm1 = "sedov_weno5_hllc_gpu_x2_y2"
+basenm2 = "sedov_weno5_hllc_old_cpu_x2_y2"
+outputdir = "../output_sedov/"
+num = 1
 fieldname = "dens"
 
-x_array, y_array, data2d = get_data(basenm1, num, fieldname)
-x_array2, y_array2, data2d2 = get_data(basenm2, num, fieldname)
+x_array, y_array, data2d = get_data(outputdir,basenm1, num, fieldname)
+x_array2, y_array2, data2d2 = get_data(outputdir,basenm2, num, fieldname)
 
 x_unique = np.unique(x_array)
 y_unique = np.unique(y_array)

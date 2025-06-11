@@ -26,7 +26,7 @@ contains
         real(8) :: dstarL, dstarR, pstar
         real(8) :: dustarL, dustarR, dvstarL, dvstarR
         real(8) :: dwstarL, dwstarR, estarL, estarR
-        real(8), dimension(3) :: n
+        integer, dimension(3) :: n
 
         dL = Uleft(1)
         ufL = Uleft(2)
@@ -42,11 +42,11 @@ contains
 
         select case (to_upper(Dir))
         case ('X')
-            n = (/1.00, 0.00, 0.00/)
+            n = (/1, 0, 0/)
         case ('Y')
-            n = (/0.00, 1.00, 0.00/)
+            n = (/0, 1, 0/)
         case ('Z')
-            n = (/0.00, 0.00, 1.00/)
+            n = (/0, 0, 1/)
         case default
             print *, "Wrong!! Direction should be X, Y, Z"
             stop
@@ -197,15 +197,15 @@ contains
         case ('X')
             imn = 2; imt1 = 3; imt2 = 4
             ibn = 6; ibt1 = 7; ibt2 = 8
-            n = (/1.0, 0.0, 0.0/)
+            n = (/1, 0, 0/)
         case ('Y')
             imn = 3; imt1 = 2; imt2 = 4
             ibn = 7; ibt1 = 6; ibt2 = 8
-            n = (/0.0, 1.0, 0.0/)
+            n = (/0, 1, 0/)
         case ('Z')
             imn = 4; imt1 = 2; imt2 = 3
             ibn = 8; ibt1 = 6; ibt2 = 7
-            n = (/0.0, 0.0, 1.0/)
+            n = (/0, 0, 1/)
         case default
             print *, "Wrong!! Direction should be X, Y, Z"
             stop
