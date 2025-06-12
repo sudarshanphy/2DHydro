@@ -4,7 +4,7 @@ module sim_init
 contains
   subroutine init_problem()
 
-    use sim_data, only: problem, ihi, ilo, jhi, &
+    use sim_data, only: ihi, ilo, jhi, &
                         jlo, PI, grav, usegrav, gamma, &
                         mainVar, myrank
     use grid_func, only: get_coords

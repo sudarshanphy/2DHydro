@@ -65,7 +65,7 @@ program hydro
   time = t0
   timeio = time + out_dt
   ! evolution loop
-  do while (time < tf)
+  do while ((time < tf) .and. (step < nend))
 
     io_output = .false.
     
@@ -83,6 +83,7 @@ program hydro
       io_output = .true.
     end if
 
+
 #ifdef MHD
     ! glm update psi 
     call glm(dt)
@@ -92,6 +93,12 @@ program hydro
 
     time = time + dt
     step = step + 1
+
+    if (step == nend) io_output=.true.
+
+    if (myrank == MASTER_PROC) then
+      print *, "Step: ", step," --> time = ", time , ", dt = ", dt
+    end if
 
     if (io_output) then
 
@@ -117,9 +124,6 @@ program hydro
 #ifdef MHD
     call glm(dt)
 #endif
-    if (myrank == MASTER_PROC) then
-      print *, "Step: ", step," --> time = ", time , ", dt = ", dt
-    end if
   end do
 
 

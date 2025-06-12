@@ -18,8 +18,8 @@ subroutine read_par()
         t0 = 0.0; tf = 0.5; dt = 1.0e-4; out_dt = 1.0e-3
         gamma = 1.4; cfl = 0.4; grav = 0.0
         xlbctype = "flow"; ylbctype = "flow" 
-        xrbctype = "flow"; yrbctype = "flow" 
-        problem = "none" 
+        xrbctype = "flow"; yrbctype = "flow"
+        nend = 10000; 
         basenm = "def"; restart = .false.; usegrav = .false.;
         recon_method = "weno3"; flux_solver = "hlle";
         xblk = 1; yblk = 1; outdir = "./"
@@ -81,8 +81,8 @@ subroutine read_par()
                  read(buffer, *, iostat=ios) ylbctype
               case ('yrbctype')
                  read(buffer, *, iostat=ios) yrbctype
-              case ('problem')
-                 read(buffer, *, iostat=ios) problem
+              case ('nend')
+                 read(buffer, *, iostat=ios) nend
               case ('basenm')
                  read(buffer, *, iostat=ios) basenm
               case ('recon_method')
