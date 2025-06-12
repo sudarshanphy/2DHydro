@@ -440,8 +440,8 @@ contains
         real(8), dimension(1:NCONSVAR_NUMBER, iGlo:iGhi, jGlo:jGhi), intent(out) :: xF, yF
         
         real(8), dimension(1:NCONSVAR_NUMBER) :: FL, FR, UL, UR, UL1, U2, UR1, Uhll, Flux
-        real(8) :: dL, udL, vdL, wdL, pL, bxL, byL, bzL, bpL
-        real(8) :: dR, udR, vdR, wdR, pR, bxR, byR, bzR, bpR
+        real(8) :: dL, pL, bxL, byL, bzL, bpL
+        real(8) :: dR, pR, bxR, byR, bzR, bpR
         real(8) :: ufL, ufR, vfL, vfR, wfL, wfR
         real(8) :: eL, eR, cfL, cfR, ptL, ptR, pt 
         real(8) :: qL, qR, SL, SR, SM, qBL, qBR, B2L, B2R, vBL, vBR
@@ -494,7 +494,7 @@ contains
         !$OMP PRIVATE(bxL, byL, bzL, bpL) &
         !$OMP PRIVATE(bxR, byR, bzR, bpR) &
         !$OMP PRIVATE(qBL, qBR, B2L, B2R, vBL, vBR, cfL, cfR) &
-        !$OMP PRIVATE(UL, UR, SL, SR, FL, FR, Fstar, Flux) &
+        !$OMP PRIVATE(UL, UR, SL, SR, FL, FR, Flux) &
         !$OMP PRIVATE(SM, UL1, UR1, U2, Uhll) 
         do j = jlo, jhi + 1
            do i = ilo, ihi + 1
@@ -538,15 +538,6 @@ contains
               VLips  = recon_plus(dir, ips,i-is,j-js)
               VRips  = recon_minus(dir, ips,i,j)
               
-              udL = ufL * dL
-              udR = ufR * dR
-
-              vdL = vfL * dL
-              vdR = vfR * dR
-
-              wdL = wfL * dL
-              wdR = wfR * dR
-
               ! speed in the normal direction
               qL = recon_plus(dir,VELX_VAR+dir-1,i-is,j-js)
               qR = recon_minus(dir,VELX_VAR+dir-1,i,j)
