@@ -41,6 +41,7 @@ contains
 
     end subroutine
 
+#ifndef MHD 
     subroutine riemann_solve_hllc(recon_plus, recon_minus, xF, yF)
         use sim_data, only: gamma, iGlo, iGhi, jGlo, jGhi, jlo, jhi, ilo, ihi, &
                             smalld, smalle, smallp
@@ -211,6 +212,8 @@ contains
 
     end subroutine
 
+#endif    
+
     subroutine riemann_solve_hlle(recon_plus, recon_minus, xF, yF)
         use sim_data, only: gamma, iGlo, iGhi, jGlo, jGhi, jlo, jhi, ilo, ihi, &
                             smalld, smalle, smallp
@@ -271,8 +274,8 @@ contains
         !$OMP PRIVATE(HL, HR, ubar, vbar, wbar, Hbar, cbar, qbar) &
 #endif
 #ifdef MHD
-        !$OMP PRIVATE(bxL, byL, bzL, bpL, eL) &
-        !$OMP PRIVATE(bxR, byR, bzR, bpR, eR) &
+        !$OMP PRIVATE(bxL, byL, bzL, bpL) &
+        !$OMP PRIVATE(bxR, byR, bzR, bpR) &
         !$OMP PRIVATE(qBL, qBR, B2L, B2R, vBL, vBR, cfL, cfR) &
 #endif
         !$OMP PRIVATE(UL, UR, SL, SR, FL, FR, Fstar, Flux) 
@@ -429,15 +432,14 @@ contains
     end subroutine
 
 #ifdef MHD
-    subroutine hlld(VL, VR, Dir, Flux)
-        use sim_data, only: gamma, ch
-        use misc_module, only: to_upper 
+    subroutine riemann_solve_hlld(recon_plus, recon_minus, xF, yF)
+        use sim_data, only: gamma, iGlo, iGhi, jGlo, jGhi, jlo, jhi, ilo, ihi, &
+                            smalld, smalle, smallp, ch
         implicit none
-
-        real(8), dimension(1:NCONSVAR_NUMBER), intent(in) :: VL, VR
-        character(len=1), intent(in) :: Dir
-        real(8), dimension(1:NCONSVAR_NUMBER), intent(out) :: Flux
-        real(8), dimension(1:NCONSVAR_NUMBER) :: FL, FR, UL, UR, UL1, U2, UR1, Uhll
+        real(8), dimension(1:NDIM,1:NVAR_NUMBER, iGlo:iGhi, jGlo:jGhi), intent(in) :: recon_plus, recon_minus
+        real(8), dimension(1:NCONSVAR_NUMBER, iGlo:iGhi, jGlo:jGhi), intent(out) :: xF, yF
+        
+        real(8), dimension(1:NCONSVAR_NUMBER) :: FL, FR, UL, UR, UL1, U2, UR1, Uhll, Flux
         real(8) :: dL, udL, vdL, wdL, pL, bxL, byL, bzL, bpL
         real(8) :: dR, udR, vdR, wdR, pR, bxR, byR, bzR, bpR
         real(8) :: ufL, ufR, vfL, vfR, wfL, wfR
@@ -445,284 +447,338 @@ contains
         real(8) :: qL, qR, SL, SR, SM, qBL, qBR, B2L, B2R, vBL, vBR
         real(8) :: f1, f2, SL1, SR1, aVL, aVR, at1, at2, vt1L, vt2L
         real(8) :: vt1R, vt2R, dsL, dsR, sdsL, sdsR, enL, enR
-        real(8), dimension(3) :: n
+        real(8) :: VLibt1, VLibt2, VRibt1, VRibt2, VLips, VRips
+        real(8) :: VLimt1, VRimt1, VLimt2, VRimt2, VLibn, VRibn
         real(8), parameter :: hllg_factor = 1.001d0
+        integer, dimension(3) :: n
+        integer :: i ,j ,dir
         ! index for different dimension
         integer :: id, imn, imt1, imt2, ibn, ibt1, ibt2, ie, ips
-
-        dL =  VL(1)
-        ufL = VL(2)
-        vfL = VL(3)
-        wfL = VL(4)
-        pL =  VL(5)
-        bxL = VL(6)
-        byL = VL(7)
-        bzL = VL(8)
-        bpL = VL(9)
-
-        dR =  VR(1)
-        ufR = VR(2)
-        vfR = VR(3)
-        wfR = VR(4)
-        pR =  VR(5)
-        bxR = VR(6)
-        byR = VR(7)
-        bzR = VR(8)
-        bpR = VR(9)
-
+        integer :: is, js
+        
+        do dir = 1, NDIM 
         id = 1; ie = 5; ips = 9
-        select case (to_upper(Dir))
-        case ('X')
+        select case (dir)
+        case (IAXIS)
             imn = 2; imt1 = 3; imt2 = 4
             ibn = 6; ibt1 = 7; ibt2 = 8
-            n = (/1.0, 0.0, 0.0/)
-        case ('Y')
+            is = 1; js = 0
+            n = (/1, 0, 0/)
+        case (JAXIS)
             imn = 3; imt1 = 2; imt2 = 4
             ibn = 7; ibt1 = 6; ibt2 = 8
-            n = (/0.0, 1.0, 0.0/)
-        case ('Z')
+            is = 0; js = 1
+            n = (/0, 1, 0/)
+        case (3)
             imn = 4; imt1 = 2; imt2 = 3
             ibn = 8; ibt1 = 6; ibt2 = 7
-            n = (/0.0, 0.0, 1.0/)
+            n = (/0, 0, 1/)
         case default
             print *, "Wrong!! Direction should be X, Y, Z"
             stop
         end select
 
-        udL = ufL * dL
-        udR = ufR * dR
+        !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(2) &
+        !$OMP MAP(TO: n, ch, gamma, smalld, smallp, smalle) &
+        !$OMP FIRSTPRIVATE(dir, id, ips, ibn, imn, imt1, imt2) &
+        !$OMP FIRSTPRIVATE(ie, ibt1, ibt2, is, js) &
+        !$OMP PRIVATE(VLibn, VRibn, VLips, VRips) &
+        !$OMP PRIVATE(VLimt1, VRimt1, VLimt2, VRimt2) &
+        !$OMP PRIVATE(VLibt1, VRibt1, VLibt2, VRibt2) &
+        !$OMP PRIVATE(dL, ufL, vfL, wfL, pL, eL) &
+        !$OMP PRIVATE(dR, ufR, vfR, wfR, pR, eR) &
+        !$OMP PRIVATE(qL, qR, ptL, ptR, dsL, dsR, aVL, aVR) &
+        !$OMP PRIVATE(at1, at2, f1, f2, SL1, SR1) &
+        !$OMP PRIVATE(vt1R, vt2R, vt1L, vt2L) &
+        !$OMP PRIVATE(sdsL, sdsR, enL, enR, pt) &
+        !$OMP PRIVATE(bxL, byL, bzL, bpL) &
+        !$OMP PRIVATE(bxR, byR, bzR, bpR) &
+        !$OMP PRIVATE(qBL, qBR, B2L, B2R, vBL, vBR, cfL, cfR) &
+        !$OMP PRIVATE(UL, UR, SL, SR, FL, FR, Fstar, Flux) &
+        !$OMP PRIVATE(SM, UL1, UR1, U2, Uhll) 
+        do j = jlo, jhi + 1
+           do i = ilo, ihi + 1
+              dL  = max(recon_plus(dir,DENS_VAR,i-is,j-js), smalld)
+              ufL = recon_plus(dir,VELX_VAR,i-is,j-js)
+              vfL = recon_plus(dir,VELY_VAR,i-is,j-js)
+              wfL = recon_plus(dir,VELZ_VAR,i-is,j-js)
+              pL  = max(recon_plus(dir,PRES_VAR,i-is,j-js), smallp)
+              ! apply eos since we can
+              eL = pL/(gamma - 1.0) + 0.5 * (dL * (ufL**2 + vfL**2 + wfL**2))
+              bxL = recon_plus(dir,BMFX_VAR,i-is,j-js)
+              byL = recon_plus(dir,BMFY_VAR,i-is,j-js)
+              bzL = recon_plus(dir,BMFZ_VAR,i-is,j-js)
+              bpL = recon_plus(dir,BPSI_VAR,i-is,j-js)
+              eL = max(eL + 0.5*(bxL*bxL + byL*byL + bzL*bzL), smalle)
 
-        vdL = vfL * dL
-        vdR = vfR * dR
+              dR  = max(recon_minus(dir,DENS_VAR,i,j), smalld)
+              ufR = recon_minus(dir,VELX_VAR,i,j)
+              vfR = recon_minus(dir,VELY_VAR,i,j)
+              wfR = recon_minus(dir,VELZ_VAR,i,j)
+              pR  = max(recon_minus(dir,PRES_VAR,i,j), smallp)
+              ! apply eos since we can
+              eR = pR/(gamma - 1.0) + 0.5 * (dR * (ufR**2 + vfR**2 + wfR**2))
+              bxR = recon_minus(dir,BMFX_VAR,i,j)                
+              byR = recon_minus(dir,BMFY_VAR,i,j)
+              bzR = recon_minus(dir,BMFZ_VAR,i,j)
+              bpR = recon_minus(dir,BPSI_VAR,i,j)
+              eR = max(eR + 0.5*(bxR*bxR + byR*byR + bzR*bzR), smalle)
 
-        wdL = wfL * dL
-        wdR = wfR * dR
-
-        eL =  eos_gete(VL(1:9))
-        eR =  eos_gete(VR(1:9))
-
-        qL = VL(imn) 
-        qR = VR(imn)
-
-        ! magnetic field value in the normal direction
-        qBL = VL(ibn)
-        qBR = VR(ibn)
-        
-        ! B.B quantity
-        B2L = sum(VL(6:8) * VL(6:8))
-        B2R = sum(VR(6:8) * VR(6:8))
-
-        ! V.B quantity
-        vBL = sum(VL(2:4) * VL(6:8))
-        vBR = sum(VR(2:4) * VR(6:8))
-
-        ! fast magnetosonic wave speed
-        ! Miyoshi eqn 67 HLLD paper 
-        cfL = sqrt(((gamma * pL + B2L) + &
-          sqrt(max((gamma * pL + B2L)**2 - gamma * pL * 4.0 * qBL**2,0.0)))/(2.0 * dL))
-
-        cfR = sqrt(((gamma * pR + B2R) + &
-          sqrt(max((gamma * pR + B2R)**2 - gamma * pR * 4.0 * qBR**2,0.0)))/(2.0 * dR))
-
-        ptL = pL + 0.5e0 * B2L
-        ptR = pR + 0.5e0 * B2R
-
-        FL = (/dL * qL, &
-               dL * ufL * qL - qBL * bxL + (0.50 * B2L + pL) * n(1) , &
-               dL * vfL * qL - qBL * byL + (0.50 * B2L + pL) * n(2) , &
-               dL * wfL * qL - qBL * bzL + (0.50 * B2L + pL) * n(3) , &
-               qL * (eL + pL + 0.50 * B2L) - qBL * vBL              , &
-               qL * bxL - qBL * ufL                                 , &
-               qL * byL - qBL * vfL                                 , &
-               qL * bzL - qBL * wfL                                 , &
-               0.0/)
-        FR = (/dR * qR, &
-               dR * ufR * qR - qBR * bxR + (0.50 * B2R + pR) * n(1) , &
-               dR * vfR * qR - qBR * byR + (0.50 * B2R + pR) * n(2) , &
-               dR * wfR * qR - qBR * bzR + (0.50 * B2R + pR) * n(3) , &
-               qR * (eR + pR + 0.50 * B2R) - qBR * vBR              , &
-               qR * bxR - qBR * ufR                                 , &
-               qR * byR - qBR * vfR                                 , &
-               qR * bzR - qBR * wfR                                 , &
-               0.0/)
-
-        SL = min(qL, qR) - max(cfL, cfR) 
-        SR = max(qL, qR) + max(cfL, cfR) 
-        
-        UL = (/dL, dL * ufL, dL * vfL, dL * wfL, eL, bxL, byL, bzL, bpL/)
-        UR = (/dR, dR * ufR, dR * vfR, dR * wfR, eR, bxR, byR, bzR, bpR/)
-         
-        !print *, "Inside HLLD" 
-
-        if (SL >= 0.000) then
-            Flux(:) = FL(:)
-        else if (SR <= 0.000) then
-            Flux(:) = FR(:)
-        else
-           ! Miyoshi 2005 eq 38
-           ! SM speed from HLLC solver
-           ! SM = ((dR * qR * (SR - qR) - dL * qL * (SL - qL)) + pL - pR) &
-           !                          / (dR * (SR - qR) - dL * (SL - qL))
-           
-           ! taken from opnmhd code 2D_basic version
-
-           Uhll(1:8) = (SR * UR(1:8) - SL * UL(1:8) - FR(1:8) + FL(1:8)) &
-                                       / (SR - SL)
-           ! entropy wave
-           SM = Uhll(imn) / Uhll(id)
-
-           ! total pressure: M05 eqn 23
-           pt = ptL + VL(id) * (SL - VL(imn)) * (SM - VL(imn))
-           ! density in star region: M05 eqn 43
-           dsL = VL(id) * (SL - VL(imn)) / (SL - SM) !d(L*)
-           dsR = VR(id) * (SR - VR(imn)) / (SR - SM) !d(R*)
-           
-           ! alfven wave 
-           aVL = abs(Uhll(ibn))/sqrt(dsL) 
-           aVR = abs(Uhll(ibn))/sqrt(dsR)
-
-           ! ========== revert to HLLC-G ==========
-           !When SR*(SL*) --> SR(SL), we switch to a HLLC solver.
-           !In these limits, the HLLD denominator  rho_L (SL-uL)(SL-SM) - B_x^2,
-           !which can be written as  rho_L* (SL+SL*-2SM) (SL-SL*), becomes zero.
-           !Since the two HLLC states L* and R* are relevant to L** and R** in HLLD,
-           !we should employ HLLC-G method for logical consistency:
-           !i.e.:  vy_L* = vy_R* (HLLC-G)  <==>  vy_L** = vy_R** (HLLD).
-           !if ( .true. ) then
-
-         if ((SL >= (SM - hllg_factor * aVL)) .or. &
-               ((SM + hllg_factor * aVR) >= SR)) then
-             f1 = 1.0e0 / (SR - SL)
-             f2 = SR * SL
-             Flux(ibt1) = f1 * (SR * FL(ibt1) - SL * FR(ibt1) + f2 * (VR(ibt1) - VL(ibt1)))  
-             Flux(ibt2) = f1 * (SR * FL(ibt2) - SL * FR(ibt2) + f2 * (VR(ibt2) - VL(ibt2))) 
-
-             at1 = Uhll(imt1)/Uhll(id)
-             at2 = Uhll(imt2)/Uhll(id)
-             
-             enL = ((SL - VL(imn))*UL(ie) - ptL*VL(imn) + pt*SM + &
-                   Uhll(ibn)*(vBL - SM*Uhll(ibn) - at1*Uhll(ibt1) - at2*Uhll(ibt2))) &
-                   / (SL - SM)
-             enR = ((SR - VR(imn))*UR(ie) - ptR*VR(imn) + pt*SM + &
-                   Uhll(ibn)*(vBR - SM*Uhll(ibn) - at1*Uhll(ibt1) - at2*Uhll(ibt2))) &
-                   / (SR - SM)
-
-             ! weight factor, 0 or 1
-             f1 = 0.5e0 + sign(0.5e0, SM)
-             f2 = 1.0e0 - f1
-             
-             Flux(id) =   f1*(SL*(dsL - UL(id)) + FL(id)) &
-                      +   f2*(SR*(dsR - UR(id)) + FR(id))
-             Flux(imn) =  f1*(SL*(dsL*SM - UL(imn)) + FL(imn)) &
-                       +  f2*(SR*(dsR*SM - UR(imn)) + FR(imn))
-             Flux(imt1) = f1*(SL*(dsL*at1 - UL(imt1)) + FL(imt1)) &
-                        + f2*(SR*(dsR*at1 - UR(imt1)) + FR(imt1))
-             Flux(imt2) = f1*(SL*(dsL*at2 - UL(imt2)) + FL(imt2)) &
-                        + f2*(SR*(dsR*at2 - UR(imt2)) + FR(imt2))
-             Flux(ie) =   f1*(SL*(enL - UL(ie)) + FL(ie)) &
-                      +   f2*(SR*(enR - UR(ie)) + FR(ie))
-           else
-           ! HLLD flux
-           ! L* state
-           f1 = 1.e0 / (VL(id)*(SL - VL(imn))*(SL-SM) - Uhll(ibn)**2)
-           UL1(ibt1) = VL(ibt1) * f1 * (VL(id)*(SL-VL(imn))**2 - Uhll(ibn)**2)
-           UL1(ibt2) = VL(ibt2) * f1 * (VL(id)*(SL-VL(imn))**2 - Uhll(ibn)**2)
-           vt1L = VL(imt1) - f1 * Uhll(ibn)*VL(ibt1)*(SM-VL(imn))
-           vt2L = VL(imt2) - f1 * Uhll(ibn)*VL(ibt2)*(SM-VL(imn))
-             
-           UL1(id) = dsL
-           UL1(ie) = ((SL-VL(imn))*UL(ie) - ptL*VL(imn) + pt*SM + &
-             Uhll(ibn)*(vBL - SM*Uhll(ibn) - vt1L*UL1(ibt1) - vt2L*UL1(ibt2))) / (SL -SM)
-           UL1(imn) = dsL * SM
-           UL1(imt1) = dsL * vt1L
-           UL1(imt2) = dsL * vt2L
-
-           ! R* state
-           f1 = 1.e00 / (VR(id)*(SR - VR(imn))*(SR-SM) - Uhll(ibn)**2)
-           UR1(ibt1) = VR(ibt1) * f1 * (VR(id)*(SR-VR(imn))**2 - Uhll(ibn)**2)
-           UR1(ibt2) = VR(ibt2) * f1 * (VR(id)*(SR-VR(imn))**2 - Uhll(ibn)**2)
-           vt1R = VR(imt1) - f1 * Uhll(ibn)*VR(ibt1)*(SM-VR(imn))
-           vt2R = VR(imt2) - f1 * Uhll(ibn)*VR(ibt2)*(SM-VR(imn))
-             
-           UR1(id) = dsR
-           UR1(ie) = ((SR-VR(imn))*UR(ie) - ptR*VR(imn) + pt*SM + &
-             Uhll(ibn)*(vBR - SM*Uhll(ibn) - vt1R*UR1(ibt1) - vt2R*UR1(ibt2))) / (SR -SM)
-           UR1(imn) = dsR * SM
-           UR1(imt1) = dsR * vt1R
-           UR1(imt2) = dsR * vt2R
-
-           ! rotational waves
-           SL1 = SM - aVL
-           SR1 = SM + aVR 
-
-           ! F = F(L*)
-           if (SL1 >= 0.000) then
-             Flux(id:ie) = SL * (UL1(id:ie) - UL(id:ie)) + FL(id:ie)
-             Flux(ibt1) =  SL * (UL1(ibt1) - UL(ibt1)) + FL(ibt1) 
-             Flux(ibt2) =  SL * (UL1(ibt2) - UL(ibt2)) + FL(ibt2)
-
-           ! F = F(R*)
-           elseif (SR1 <= 0.000) then
-             Flux(id:ie) = SR * (UR1(id:ie) - UR(id:ie)) + FR(id:ie)
-             Flux(ibt1) =  SR * (UR1(ibt1) - UR(ibt1)) + FR(ibt1) 
-             Flux(ibt2) =  SR * (UR1(ibt2) - UR(ibt2)) + FR(ibt2)
-
-           ! central states
-           else
-             sdsL = sqrt(dsL)
-             sdsR = sqrt(dsR)
-
-             f1 = 1.0e0/(sdsL + sdsR)
-             f2 = sign(1.0e0, Uhll(ibn))
-
-             at1 = f1 * (sdsL*vt1L + sdsR*vt1R + (UR1(ibt1) - UL1(ibt1))*f2)
-             at2 = f1 * (sdsL*vt2L + sdsR*vt2R + (UR1(ibt2) - UL1(ibt2))*f2)
+              ! some other quantities needed later:
+              VLimt1 = recon_plus(dir, imt1,i-is,j-js)
+              VRimt1 = recon_minus(dir, imt1,i,j)
+              VLimt2 = recon_plus(dir, imt2,i-is,j-js)
+              VRimt2 = recon_minus(dir, imt2,i,j)
+              VLibt1 = recon_plus(dir, ibt1,i-is,j-js)
+              VRibt1 = recon_minus(dir, ibt1,i,j)
+              VLibt2 = recon_plus(dir, ibt2,i-is,j-js)
+              VRibt2 = recon_minus(dir, ibt2,i,j)
+              VLibn  = recon_plus(dir, ibn,i-is,j-js)
+              VRibn  = recon_minus(dir, ibn,i,j)
+              VLips  = recon_plus(dir, ips,i-is,j-js)
+              VRips  = recon_minus(dir, ips,i,j)
               
-             U2(ibt1) = f1 * (sdsL * UR1(ibt1) + sdsR * UL1(ibt1) + sdsL*sdsR*(vt1R - vt1L)*f2)
-             U2(ibt2) = f1 * (sdsL * UR1(ibt2) + sdsR * UL1(ibt2) + sdsL*sdsR*(vt2R - vt2L)*f2)
+              udL = ufL * dL
+              udR = ufR * dR
 
-             ! F = F(L**)
-             if (SM >= 0.000) then
+              vdL = vfL * dL
+              vdR = vfR * dR
 
-               U2(id) = dsL
-               U2(ie) = UL1(ie) - sdsL*(vt1L*UL1(ibt1) + vt2L*UL1(ibt2) &
-                                - at1*U2(ibt1) - at2*U2(ibt2))*f2
+              wdL = wfL * dL
+              wdR = wfR * dR
 
-               U2(imn) = dsL * SM
-               U2(imt1) = dsL * at1
-               U2(imt2) = dsL * at2
+              ! speed in the normal direction
+              qL = recon_plus(dir,VELX_VAR+dir-1,i-is,j-js)
+              qR = recon_minus(dir,VELX_VAR+dir-1,i,j)
 
-               Flux(id:ie) = SL1*U2(id:ie) - (SL1 - SL)*UL1(id:ie) - SL*UL(id:ie) + FL(id:ie)
-               !Flux(1:5) = SL1*U2(1:5) - (SL1 - SL)*UL1(1:5) - SL*UL(1:5) + FL(1:5)
-               Flux(ibt1) = SL1*U2(ibt1) - (SL1 - SL)*UL1(ibt1) - SL*UL(ibt1) + FL(ibt1)
-               Flux(ibt2) = SL1*U2(ibt2) - (SL1 - SL)*UL1(ibt2) - SL*UL(ibt2) + FL(ibt2)
+              ! magnetic field value in the normal direction
+              qBL = recon_plus(dir,BMFX_VAR+dir-1,i-is,j-js)
+              qBR = recon_minus(dir,BMFX_VAR+dir-1,i,j)
+              
+              ! B.B quantity
+              B2L = bxL*bxL + byL*byL + bzL*bzL 
+              B2R = bxR*bxR + byR*byR + bzR*bzR 
+      
+              ! V.B quantity
+              vBL = ufL*bxL + vfL*byL + wfL*bzL 
+              vBR = ufR*bxR + vfR*byR + wfR*bzR
 
-             ! F = F(R**)
-             else
+              ! fast magnetosonic wave speed
+              ! Miyoshi eqn 67 HLLD paper 
+              cfL = sqrt(((gamma * pL + B2L) + &
+                sqrt(max((gamma * pL + B2L)**2 - gamma * pL * 4.0 * qBL**2,0.0)))/(2.0 * dL))
 
-               U2(id) = dsR
-               U2(ie) = UR1(ie) - sdsR*(vt1R*UR1(ibt1) + vt2R*UR1(ibt2) &
-                                - at1*U2(ibt1) - at2*U2(ibt2))*f2
+              cfR = sqrt(((gamma * pR + B2R) + &
+                sqrt(max((gamma * pR + B2R)**2 - gamma * pR * 4.0 * qBR**2,0.0)))/(2.0 * dR))
 
-               U2(imn) = dsR * SM
-               U2(imt1) = dsR * at1
-               U2(imt2) = dsR * at2
+              ptL = pL + 0.5e0 * B2L
+              ptR = pR + 0.5e0 * B2R
 
-               Flux(id:ie) = SR1*U2(id:ie) - (SR1 - SR)*UR1(id:ie) - SR*UR(id:ie) + FR(id:ie)
-               !Flux(1:5) = SL1*U2(1:5) - (SL1 - SL)*UL1(1:5) - SL*UL(1:5) + FL(1:5)
-               Flux(ibt1) = SR1*U2(ibt1) - (SR1 - SR)*UR1(ibt1) - SR*UR(ibt1) + FR(ibt1)
-               Flux(ibt2) = SR1*U2(ibt2) - (SR1 - SR)*UR1(ibt2) - SR*UR(ibt2) + FR(ibt2)
+              FL = (/dL * qL, &
+                     dL * ufL * qL - qBL * bxL + (0.50 * B2L + pL) * n(1) , &
+                     dL * vfL * qL - qBL * byL + (0.50 * B2L + pL) * n(2) , &
+                     dL * wfL * qL - qBL * bzL + (0.50 * B2L + pL) * n(3) , &
+                     qL * (eL + pL + 0.50 * B2L) - qBL * vBL              , &
+                     qL * bxL - qBL * ufL                                 , &
+                     qL * byL - qBL * vfL                                 , &
+                     qL * bzL - qBL * wfL                                 , &
+                     0.0/)
+              FR = (/dR * qR, &
+                     dR * ufR * qR - qBR * bxR + (0.50 * B2R + pR) * n(1) , &
+                     dR * vfR * qR - qBR * byR + (0.50 * B2R + pR) * n(2) , &
+                     dR * wfR * qR - qBR * bzR + (0.50 * B2R + pR) * n(3) , &
+                     qR * (eR + pR + 0.50 * B2R) - qBR * vBR              , &
+                     qR * bxR - qBR * ufR                                 , &
+                     qR * byR - qBR * vfR                                 , &
+                     qR * bzR - qBR * wfR                                 , &
+                     0.0/)
 
-             endif
-           endif
-         endif
-        end if
+              SL = min(qL, qR) - max(cfL, cfR) 
+              SR = max(qL, qR) + max(cfL, cfR) 
+              
+              UL = (/dL, dL * ufL, dL * vfL, dL * wfL, eL, bxL, byL, bzL, bpL/)
+              UR = (/dR, dR * ufR, dR * vfR, dR * wfR, eR, bxR, byR, bzR, bpR/)
+         
+              if (SL >= 0.000) then
+                  Flux(:) = FL(:)
+              else if (SR <= 0.000) then
+                  Flux(:) = FR(:)
+              else
+                  ! Miyoshi 2005 eq 38
+                  ! SM speed from HLLC solver
+                  ! SM = ((dR * qR * (SR - qR) - dL * qL * (SL - qL)) + pL - pR) &
+                  !                          / (dR * (SR - qR) - dL * (SL - qL))
+                  
+                  ! taken from opnmhd code 2D_basic version
 
-        Flux(ibn) = 0.5e0 * ((VL(ips) + VR(ips)) - ch * (VR(ibn) - VL(ibn)))
-        Flux(ips) = 0.5e0 * (ch*ch*(VL(ibn)+VR(ibn)) - ch*(VR(ips) - VL(ips)))
+                  Uhll(1:8) = (SR * UR(1:8) - SL * UL(1:8) - FR(1:8) + FL(1:8)) &
+                                              / (SR - SL)
+                  ! entropy wave
+                  SM = Uhll(imn) / Uhll(id)
+
+                  ! total pressure: M05 eqn 23
+                  pt = ptL + dL * (SL - qL) * (SM - qL)
+                  ! density in star region: M05 eqn 43
+                  dsL = dL * (SL - qL) / (SL - SM) !d(L*)
+                  dsR = dR * (SR - qR) / (SR - SM) !d(R*)
+                  
+                  ! alfven wave 
+                  aVL = abs(Uhll(ibn))/sqrt(dsL) 
+                  aVR = abs(Uhll(ibn))/sqrt(dsR)
+
+                  ! ========== revert to HLLC-G ==========
+                  !When SR*(SL*) --> SR(SL), we switch to a HLLC solver.
+                  !In these limits, the HLLD denominator  rho_L (SL-uL)(SL-SM) - B_x^2,
+                  !which can be written as  rho_L* (SL+SL*-2SM) (SL-SL*), becomes zero.
+                  !Since the two HLLC states L* and R* are relevant to L** and R** in HLLD,
+                  !we should employ HLLC-G method for logical consistency:
+                  !i.e.:  vy_L* = vy_R* (HLLC-G)  <==>  vy_L** = vy_R** (HLLD).
+                  !if ( .true. ) then
+
+                  if((SL >= (SM - hllg_factor * aVL)) .or. &
+                    ((SM + hllg_factor * aVR) >= SR)) then
+                  f1 = 1.0e0 / (SR - SL)
+                  f2 = SR * SL
+                  Flux(ibt1) = f1 * (SR * FL(ibt1) - SL * FR(ibt1) + f2 * (VRibt1 - VLibt1))  
+                  Flux(ibt2) = f1 * (SR * FL(ibt2) - SL * FR(ibt2) + f2 * (VRibt2 - VLibt2)) 
+
+                  at1 = Uhll(imt1)/Uhll(id)
+                  at2 = Uhll(imt2)/Uhll(id)
+                  
+                  enL = ((SL - qL)*UL(ie) - ptL*qL + pt*SM + &
+                        Uhll(ibn)*(vBL - SM*Uhll(ibn) - at1*Uhll(ibt1) - at2*Uhll(ibt2))) &
+                        / (SL - SM)
+                  enR = ((SR - qR)*UR(ie) - ptR*qR + pt*SM + &
+                        Uhll(ibn)*(vBR - SM*Uhll(ibn) - at1*Uhll(ibt1) - at2*Uhll(ibt2))) &
+                        / (SR - SM)
+
+                  ! weight factor, 0 or 1
+                  f1 = 0.5e0 + sign(0.5e0, SM)
+                  f2 = 1.0e0 - f1
+                  
+                  Flux(id) =   f1*(SL*(dsL - UL(id)) + FL(id)) &
+                           +   f2*(SR*(dsR - UR(id)) + FR(id))
+                  Flux(imn) =  f1*(SL*(dsL*SM - UL(imn)) + FL(imn)) &
+                            +  f2*(SR*(dsR*SM - UR(imn)) + FR(imn))
+                  Flux(imt1) = f1*(SL*(dsL*at1 - UL(imt1)) + FL(imt1)) &
+                             + f2*(SR*(dsR*at1 - UR(imt1)) + FR(imt1))
+                  Flux(imt2) = f1*(SL*(dsL*at2 - UL(imt2)) + FL(imt2)) &
+                             + f2*(SR*(dsR*at2 - UR(imt2)) + FR(imt2))
+                  Flux(ie) =   f1*(SL*(enL - UL(ie)) + FL(ie)) &
+                           +   f2*(SR*(enR - UR(ie)) + FR(ie))
+                  else
+                  ! HLLD flux
+                  ! L* state
+                  f1 = 1.e0 / (dL*(SL - qL)*(SL-SM) - Uhll(ibn)**2)
+                  UL1(ibt1) = VLibt1 * f1 * (dL*(SL-qL)**2 - Uhll(ibn)**2)
+                  UL1(ibt2) = VLibt2 * f1 * (dL*(SL-qL)**2 - Uhll(ibn)**2)
+                  vt1L = VLimt1 - f1 * Uhll(ibn)*VLibt1*(SM-qL)
+                  vt2L = VLimt2 - f1 * Uhll(ibn)*VLibt2*(SM-qL)
+                    
+                  UL1(id) = dsL
+                  UL1(ie) = ((SL-qL)*UL(ie) - ptL*qL + pt*SM + &
+                    Uhll(ibn)*(vBL - SM*Uhll(ibn) - vt1L*UL1(ibt1) - vt2L*UL1(ibt2))) / (SL -SM)
+                  UL1(imn) = dsL * SM
+                  UL1(imt1) = dsL * vt1L
+                  UL1(imt2) = dsL * vt2L
+
+                  ! R* state
+                  f1 = 1.e00 / (dR*(SR - qR)*(SR-SM) - Uhll(ibn)**2)
+                  UR1(ibt1) = VRibt1 * f1 * (dR*(SR-qR)**2 - Uhll(ibn)**2)
+                  UR1(ibt2) = VRibt2 * f1 * (dR*(SR-qR)**2 - Uhll(ibn)**2)
+                  vt1R = VRimt1 - f1 * Uhll(ibn)*VRibt1*(SM-qR)
+                  vt2R = VRimt2 - f1 * Uhll(ibn)*VRibt2*(SM-qR)
+                    
+                  UR1(id) = dsR
+                  UR1(ie) = ((SR-qR)*UR(ie) - ptR*qR + pt*SM + &
+                    Uhll(ibn)*(vBR - SM*Uhll(ibn) - vt1R*UR1(ibt1) - vt2R*UR1(ibt2))) / (SR -SM)
+                  UR1(imn) = dsR * SM
+                  UR1(imt1) = dsR * vt1R
+                  UR1(imt2) = dsR * vt2R
+
+                  ! rotational waves
+                  SL1 = SM - aVL
+                  SR1 = SM + aVR 
+
+                  ! F = F(L*)
+                  if (SL1 >= 0.000) then
+                    Flux(id:ie) = SL * (UL1(id:ie) - UL(id:ie)) + FL(id:ie)
+                    Flux(ibt1) =  SL * (UL1(ibt1) - UL(ibt1)) + FL(ibt1) 
+                    Flux(ibt2) =  SL * (UL1(ibt2) - UL(ibt2)) + FL(ibt2)
+
+                  ! F = F(R*)
+                  elseif (SR1 <= 0.000) then
+                    Flux(id:ie) = SR * (UR1(id:ie) - UR(id:ie)) + FR(id:ie)
+                    Flux(ibt1) =  SR * (UR1(ibt1) - UR(ibt1)) + FR(ibt1) 
+                    Flux(ibt2) =  SR * (UR1(ibt2) - UR(ibt2)) + FR(ibt2)
+
+                  ! central states
+                  else
+                    sdsL = sqrt(dsL)
+                    sdsR = sqrt(dsR)
+
+                    f1 = 1.0e0/(sdsL + sdsR)
+                    f2 = sign(1.0e0, Uhll(ibn))
+
+                    at1 = f1 * (sdsL*vt1L + sdsR*vt1R + (UR1(ibt1) - UL1(ibt1))*f2)
+                    at2 = f1 * (sdsL*vt2L + sdsR*vt2R + (UR1(ibt2) - UL1(ibt2))*f2)
+                     
+                    U2(ibt1) = f1 * (sdsL * UR1(ibt1) + sdsR * UL1(ibt1) + sdsL*sdsR*(vt1R - vt1L)*f2)
+                    U2(ibt2) = f1 * (sdsL * UR1(ibt2) + sdsR * UL1(ibt2) + sdsL*sdsR*(vt2R - vt2L)*f2)
+
+                    ! F = F(L**)
+                    if (SM >= 0.000) then
+
+                      U2(id) = dsL
+                      U2(ie) = UL1(ie) - sdsL*(vt1L*UL1(ibt1) + vt2L*UL1(ibt2) &
+                                       - at1*U2(ibt1) - at2*U2(ibt2))*f2
+
+                      U2(imn) = dsL * SM
+                      U2(imt1) = dsL * at1
+                      U2(imt2) = dsL * at2
+
+                      Flux(id:ie) = SL1*U2(id:ie) - (SL1 - SL)*UL1(id:ie) - SL*UL(id:ie) + FL(id:ie)
+                      !Flux(1:5) = SL1*U2(1:5) - (SL1 - SL)*UL1(1:5) - SL*UL(1:5) + FL(1:5)
+                      Flux(ibt1) = SL1*U2(ibt1) - (SL1 - SL)*UL1(ibt1) - SL*UL(ibt1) + FL(ibt1)
+                      Flux(ibt2) = SL1*U2(ibt2) - (SL1 - SL)*UL1(ibt2) - SL*UL(ibt2) + FL(ibt2)
+
+                    ! F = F(R**)
+                    else
+
+                      U2(id) = dsR
+                      U2(ie) = UR1(ie) - sdsR*(vt1R*UR1(ibt1) + vt2R*UR1(ibt2) &
+                                       - at1*U2(ibt1) - at2*U2(ibt2))*f2
+
+                      U2(imn) = dsR * SM
+                      U2(imt1) = dsR * at1
+                      U2(imt2) = dsR * at2
+
+                      Flux(id:ie) = SR1*U2(id:ie) - (SR1 - SR)*UR1(id:ie) - SR*UR(id:ie) + FR(id:ie)
+                      !Flux(1:5) = SL1*U2(1:5) - (SL1 - SL)*UL1(1:5) - SL*UL(1:5) + FL(1:5)
+                      Flux(ibt1) = SR1*U2(ibt1) - (SR1 - SR)*UR1(ibt1) - SR*UR(ibt1) + FR(ibt1)
+                      Flux(ibt2) = SR1*U2(ibt2) - (SR1 - SR)*UR1(ibt2) - SR*UR(ibt2) + FR(ibt2)
+
+                    endif
+                  endif
+                  endif
+              end if
+
+              Flux(ibn) = 0.5e0 * ((VLips + VRips) - ch * (VRibn - VLibn))
+              Flux(ips) = 0.5e0 * (ch*ch*(VLibn+VRibn) - ch*(VRips - VLips))
+              
+              if (dir == IAXIS) then
+                xF(1:NCONSVAR_NUMBER,i,j) = Flux(1:NCONSVAR_NUMBER)
+              else if (dir == JAXIS) then
+                yF(1:NCONSVAR_NUMBER,i,j) = Flux(1:NCONSVAR_NUMBER)
+              end if
+           end do
+        end do
+        !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO
+        end do ! dir
 
         return
-    end subroutine hlld
+    end subroutine 
+
 #endif
 
     function eos_gete(U) result(ef)
