@@ -9,7 +9,7 @@ contains
        use eos_module, only: eos_getp
        use sim_data, only: grav, usegrav, ilo, ihi, jlo, jhi, &
                            dx, dy, mainVar, iGlo, jGlo, iGhi, &
-                           jGhi, smalld, smallp, smalle, gamma
+                           jGhi, smalld, smallp, smalle
 
        use applyBC_module, only: applyBC_all 
        use guard_func, only: guardcell_fill
@@ -21,6 +21,7 @@ contains
        real(8), dimension(1:NDIM,1:NVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: recon_plus, recon_minus
                                            
        real(8), dimension(1:NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: xF, yF
+       real(8), dimension(1:NCONSVAR_NUMBER) :: Uleft, Uright, Vleft, Vright
        real(8), dimension(1:NCONSVAR_NUMBER) :: sgrav, sterm
 
        integer :: i, j, k, n 
@@ -34,12 +35,6 @@ contains
        end if
        U = 0.0; Up1 = 0.0
 
-       !$OMP TARGET ENTER DATA MAP(ALWAYS, TO: solnVar, dt)
-       !$OMP TARGET ENTER DATA MAP(TO: gamma, smalld, smallp, smalle, sterm, dx, dy)
-       !$OMP TARGET ENTER DATA MAP(ALLOC: recon_plus, recon_minus, xF, yF, U, Up1, sgrav)
-        
-       ! Initialize the conserved arrays
-       !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(2) 
        do j = jGlo, jGhi
          do i = iGlo, iGhi
            Up1(DENS_CONS,i,j) = max(solnVar(DENS_VAR,i,j), smalld) 
@@ -60,23 +55,23 @@ contains
 #endif
          end do
        end do
-       !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO 
        nullify(solnVar)
 
        ! rk2 has 2 steps
        do k = 1, 2
          ! use the updated solution for the next step
          solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
-         if (k == 2) then
-            !$OMP TARGET UPDATE TO(solnVar)
-         end if
 
+         !$OMP TARGET ENTER DATA MAP(ALWAYS, TO: solnVar)
+         !$OMP TARGET ENTER DATA MAP(ALLOC: recon_plus, recon_minus, xF, yF)
+         
          call recon_getcellfaces(solnVar, &
                                  recon_plus, recon_minus)
          call riemann_solve(recon_plus, recon_minus, xF, yF)
 
-          
-          !$OMP TARGET TEAMS PARALLEL DISTRIBUTE DO COLLAPSE(2)
+         !$OMP TARGET EXIT DATA MAP(ALWAYS, FROM: xF, yF)
+         !$OMP TARGET EXIT DATA MAP(DELETE: recon_plus, recon_minus, xF, yF)
+
           do j=jlo, jhi
             do i = ilo, ihi
 #ifdef MHD
@@ -98,18 +93,10 @@ contains
                solnVar(BMFX_VAR:BMFZ_VAR,i,j) = Up1(BMFX_CONS:BMFZ_CONS,i,j) 
                solnVar(BPSI_VAR,i,j) = Up1(BPSI_CONS,i,j)
 #endif
-               ! Apply EOS: in 2D
-               solnVar(PRES_VAR,i,j) = (gamma - 1.0) * (solnVar(ENER_VAR,i,j) - 0.50 * solnVar(DENS_VAR,i,j) * &
-                                       (solnVar(VELX_VAR,i,j)**2 + solnVar(VELY_VAR,i,j)**2))
-#ifdef MHD
-               solnVar(PRES_VAR,i,j) = solnVar(PRES_VAR,i,j) - (gamma - 1.0) * 0.50 * &
-                                       (solnVar(BMFX_VAR,i,j)**2 + solnVar(BMFY_VAR,i,j)**2)
-#endif
+               call eos_getp(solnVar(:,i,j))
                solnVar(PRES_VAR,i,j) = max(solnVar(PRES_VAR,i,j), smallp)
             end do
           end do
-          !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO 
-          !$OMP TARGET UPDATE FROM(solnVar)
           nullify(solnVar)
           call guardcell_fill()
           call applyBC_all()
@@ -119,8 +106,6 @@ contains
        ! get the updated solution and store it as Up1
        solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
 
-       !$OMP TARGET UPDATE TO(solnVar)
-       !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(2) 
        do j = jGlo, jGhi
          do i = iGlo, iGhi
            Up1(DENS_CONS,i,j) = max(solnVar(DENS_VAR,i,j), smalld) 
@@ -133,9 +118,12 @@ contains
 #endif
          end do
        end do
-       !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO 
 
-       !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(2) 
+       nullify(solnVar) 
+        
+       ! apply RK2 computation
+       solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
+
        do j=jGlo, jGhi
          do i = iGlo, iGhi
            Up1(:,i,j) = 0.5e0 * (U(:,i,j) + Up1(:,i,j))
@@ -148,21 +136,12 @@ contains
            solnVar(BMFX_VAR:BMFZ_VAR,i,j) = Up1(BMFX_CONS:BMFZ_CONS,i,j) 
            solnVar(BPSI_VAR,i,j) = Up1(BPSI_CONS,i,j)
 #endif
-           ! Apply EOS: in 2D
-           solnVar(PRES_VAR,i,j) = (gamma - 1.0) * (solnVar(ENER_VAR,i,j) - 0.50 * solnVar(DENS_VAR,i,j) * &
-                                   (solnVar(VELX_VAR,i,j)**2 + solnVar(VELY_VAR,i,j)**2))
-#ifdef MHD
-           solnVar(PRES_VAR,i,j) = solnVar(PRES_VAR,i,j) - (gamma - 1.0) * 0.50 * &
-                                   (solnVar(BMFX_VAR,i,j)**2 + solnVar(BMFY_VAR,i,j)**2)
-#endif
+           call eos_getp(solnVar(:,i,j))
            solnVar(PRES_VAR,i,j) = max(solnVar(PRES_VAR,i,j), smallp)
 
          end do
        end do
-       !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO 
-       !$OMP TARGET UPDATE FROM(solnVar)
-       !$OMP TARGET EXIT DATA MAP(DELETE: recon_plus, recon_minus, xF, yF)
-       
+
        nullify(solnVar) 
     end subroutine RK2_SSP
 end module rk2_module
