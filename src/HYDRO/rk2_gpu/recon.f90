@@ -12,6 +12,73 @@ contains
 
   end function minmod
 
+  subroutine get_facevalue_tvd(solnVar, recon_plus, recon_minus, check)
+        use sim_data, only: ilo, ihi, jlo, jhi, iGlo, iGhi, jGlo, jGhi 
+        implicit none
+        real, dimension(1:, iGlo:, jGlo:), intent(in) :: solnVar
+        real, dimension(NDIM, NVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(inout) :: recon_minus, recon_plus
+        logical, intent(in), optional :: check
+        real :: fplus12, fminus12
+        integer :: i, j, n, im, ip, jm, jp, dir
+        real :: delp, delm, delc, dxover2, qm1, q, qp1, fact
+        logical :: docheck
+
+        real, parameter :: theta = 1.40
+
+        docheck = .false.
+        if (present(check)) then
+           docheck = .true.
+        end if
+
+        do dir = 1, NDIM
+        select case (dir)
+           case (IAXIS)
+              im = 1; ip = 1; jm = 0; jp = 0
+           case (JAXIS)
+              im = 0; ip = 0; jm = 1; jp = 1
+        end select
+
+        !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(3) &
+        !$OMP FIRSTPRIVATE(im, ip, jm, jp, dir, docheck) &
+        !$OMP PRIVATE(qm1, q, qp1) &
+        !$OMP PRIVATE(fplus12, fminus12) &
+        !$OMP PRIVATE(delp, delm, delc, fact, dxover2) 
+        do j = jlo-1, jhi+1
+           do i = ilo-1, ihi+1
+               do n = 1, NVAR_NUMBER
+
+                  qm1 = solnVar(n,i-im, j-jm)
+                  q = solnVar(n,i,j)
+                  qp1 = solnVar(n,i+ip, j+jp)
+
+                  delp = qp1 - q
+                  delm = q - qm1
+                  delc = qp1 - qm1
+
+                  ! tvd reconstruction: generalized minmod limiter
+                  fact = min(theta*abs(delp), abs(delc)/2.0, theta*abs(delm))
+                  fact = sign(fact,delc)
+
+                  if (delp * delm < 0.0) fact = 0.0
+
+                  dxover2 = 0.5 * fact 
+                  fplus12 = q + dxover2 
+                  fminus12 = q - dxover2
+                  if (dir  == IAXIS) then
+                    recon_plus(dir,n,i,j) = fplus12
+                    recon_minus(dir,n,i,j) = fminus12
+                  else if (dir == JAXIS) then
+                    recon_plus(dir,n,i,j) = fplus12
+                    recon_minus(dir,n,i,j) = fminus12
+                  end if
+               end do
+           end do
+        end do
+        !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO
+        end do !dir
+
+  end subroutine
+
   subroutine get_facevalue_weno(solnVar, recon_plus, recon_minus, check)
         use sim_data, only: ilo, ihi, jlo, jhi, iGlo, iGhi, jGlo, jGhi 
         implicit none
@@ -273,6 +340,8 @@ contains
 
         if (to_upper(trim(recon_method)) == "WENO3") then
                 call get_facevalue_weno(solnVar, recon_plus, recon_minus)
+        else if (to_upper(trim(recon_method)) == "TVD") then
+                call get_facevalue_tvd(solnVar, recon_plus, recon_minus)
         else if (to_upper(trim(recon_method)) == "WENO5") then
                 call get_facevalue_weno5z(solnVar, recon_plus, recon_minus)
         end if

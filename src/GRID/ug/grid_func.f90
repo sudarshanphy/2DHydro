@@ -15,7 +15,9 @@ module grid_func
     ! xrank and yrank 
     xrank = mod(myrank, xblk)
     yrank = floor(real(myrank)/xblk)
-  
+    
+    ! default guard cells
+    Gpts = 2  
     if (to_upper(trim(recon_method)) == "WENO3") Gpts = 2
     if (to_upper(trim(recon_method)) == "WENO5") Gpts = 3
  
