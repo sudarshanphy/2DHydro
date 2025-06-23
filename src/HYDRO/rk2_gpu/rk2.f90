@@ -18,7 +18,7 @@ contains
        real(8), intent(in) :: dt
 
        real(8), dimension(1:NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: U, Up1
-       real(8), dimension(1:NDIM,1:NVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: recon_plus, recon_minus
+       real(8), dimension(1:NDIM,1:NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: recon_plus, recon_minus
                                            
        real(8), dimension(1:NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi) :: xF, yF
        real(8), dimension(1:NCONSVAR_NUMBER) :: sgrav, sterm
@@ -100,10 +100,12 @@ contains
 #endif
                ! Apply EOS: in 2D
                solnVar(PRES_VAR,i,j) = (gamma - 1.0) * (solnVar(ENER_VAR,i,j) - 0.50 * solnVar(DENS_VAR,i,j) * &
-                                       (solnVar(VELX_VAR,i,j)**2 + solnVar(VELY_VAR,i,j)**2))
+                                       (solnVar(VELX_VAR,i,j)**2 + solnVar(VELY_VAR,i,j)**2 + &
+                                        solnVar(VELZ_VAR,i,j)**2))
 #ifdef MHD
                solnVar(PRES_VAR,i,j) = solnVar(PRES_VAR,i,j) - (gamma - 1.0) * 0.50 * &
-                                       (solnVar(BMFX_VAR,i,j)**2 + solnVar(BMFY_VAR,i,j)**2)
+                                       (solnVar(BMFX_VAR,i,j)**2 + solnVar(BMFY_VAR,i,j)**2 + &
+                                        solnVar(BMFZ_VAR,i,j)**2)
 #endif
                solnVar(PRES_VAR,i,j) = max(solnVar(PRES_VAR,i,j), smallp)
             end do
@@ -150,10 +152,12 @@ contains
 #endif
            ! Apply EOS: in 2D
            solnVar(PRES_VAR,i,j) = (gamma - 1.0) * (solnVar(ENER_VAR,i,j) - 0.50 * solnVar(DENS_VAR,i,j) * &
-                                   (solnVar(VELX_VAR,i,j)**2 + solnVar(VELY_VAR,i,j)**2))
+                                   (solnVar(VELX_VAR,i,j)**2 + solnVar(VELY_VAR,i,j)**2 + &
+                                    solnVar(VELZ_VAR,i,j)**2))
 #ifdef MHD
            solnVar(PRES_VAR,i,j) = solnVar(PRES_VAR,i,j) - (gamma - 1.0) * 0.50 * &
-                                   (solnVar(BMFX_VAR,i,j)**2 + solnVar(BMFY_VAR,i,j)**2)
+                                   (solnVar(BMFX_VAR,i,j)**2 + solnVar(BMFY_VAR,i,j)**2 + &
+                                    solnVar(BMFZ_VAR,i,j)**2)
 #endif
            solnVar(PRES_VAR,i,j) = max(solnVar(PRES_VAR,i,j), smallp)
 

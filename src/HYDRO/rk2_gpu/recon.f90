@@ -16,7 +16,7 @@ contains
         use sim_data, only: ilo, ihi, jlo, jhi, iGlo, iGhi, jGlo, jGhi 
         implicit none
         real, dimension(1:, iGlo:, jGlo:), intent(in) :: solnVar
-        real, dimension(NDIM, NVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(inout) :: recon_minus, recon_plus
+        real, dimension(NDIM, NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(inout) :: recon_minus, recon_plus
         logical, intent(in), optional :: check
         real :: fplus12, fminus12
         integer :: i, j, n, im, ip, jm, jp, dir
@@ -45,7 +45,7 @@ contains
         !$OMP PRIVATE(delp, delm, delc, fact, dxover2) 
         do j = jlo-1, jhi+1
            do i = ilo-1, ihi+1
-               do n = 1, NVAR_NUMBER
+               do n = 1, NCONSVAR_NUMBER
 
                   qm1 = solnVar(n,i-im, j-jm)
                   q = solnVar(n,i,j)
@@ -83,7 +83,7 @@ contains
         use sim_data, only: ilo, ihi, jlo, jhi, iGlo, iGhi, jGlo, jGhi 
         implicit none
         real, dimension(1:, iGlo:, jGlo:), intent(in) :: solnVar
-        real, dimension(NDIM, NVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(inout) :: recon_minus, recon_plus
+        real, dimension(NDIM, NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(inout) :: recon_minus, recon_plus
         logical, intent(in), optional :: check
         real :: fplus12, fminus12
 
@@ -126,7 +126,7 @@ contains
         !$OMP PRIVATE(delp, delm) 
         do j = jlo-1, jhi+1
            do i = ilo-1, ihi+1
-               do n = 1, NVAR_NUMBER
+               do n = 1, NCONSVAR_NUMBER
 
                   qm1 = solnVar(n,i-im, j-jm)
                   q = solnVar(n,i,j)
@@ -188,7 +188,7 @@ contains
         use sim_data, only: ilo, ihi, jlo, jhi, iGlo, iGhi, jGlo, jGhi 
         implicit none
         real, dimension(1:, iGlo:, jGlo:), intent(in) :: solnVar
-        real, dimension(NDIM, NVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(inout) :: recon_minus, recon_plus
+        real, dimension(NDIM, NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(inout) :: recon_minus, recon_plus
         logical, intent(in), optional :: check
 
         real :: fplus12, fminus12
@@ -247,7 +247,7 @@ contains
         !$OMP PRIVATE(delp, delm)
         do j = jlo-1, jhi+1
            do i = ilo-1, ihi+1
-               do n = 1, NVAR_NUMBER
+               do n = 1, NCONSVAR_NUMBER
                   qm2 = solnVar(n,i-imm, j-jmm)
                   qm1 = solnVar(n,i-im, j-jm)
                   q = solnVar(n,i,j)
@@ -331,7 +331,7 @@ contains
         use misc_module, only: to_upper
         implicit none
         real, dimension(1:, iGlo:, jGlo:), intent(in) :: solnVar
-        real, dimension(NDIM,NVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(out) :: recon_plus, recon_minus
+        real, dimension(NDIM,NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(out) :: recon_plus, recon_minus
         
         integer :: i, j, n
 

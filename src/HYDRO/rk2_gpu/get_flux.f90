@@ -12,7 +12,7 @@ contains
         use misc_module, only: to_upper
 
         implicit none
-        real(8), dimension(1:NDIM,1:NVAR_NUMBER, iGlo:iGhi, jGlo:jGhi), intent(in) :: recon_plus, recon_minus
+        real(8), dimension(1:NDIM,1:NCONSVAR_NUMBER, iGlo:iGhi, jGlo:jGhi), intent(in) :: recon_plus, recon_minus
         real(8), dimension(1:NCONSVAR_NUMBER, iGlo:iGhi, jGlo:jGhi), intent(out) :: xF, yF
         
         if (to_upper(trim(flux_solver)) == "HLLC") then
@@ -46,7 +46,7 @@ contains
         use sim_data, only: gamma, iGlo, iGhi, jGlo, jGhi, jlo, jhi, ilo, ihi, &
                             smalld, smalle, smallp
         implicit none
-        real(8), dimension(1:NDIM,1:NVAR_NUMBER, iGlo:iGhi, jGlo:jGhi), intent(in) :: recon_plus, recon_minus
+        real(8), dimension(1:NDIM,1:NCONSVAR_NUMBER, iGlo:iGhi, jGlo:jGhi), intent(in) :: recon_plus, recon_minus
         real(8), dimension(1:NCONSVAR_NUMBER, iGlo:iGhi, jGlo:jGhi), intent(out) :: xF, yF
 
         real(8), dimension(1:NCONSVAR_NUMBER) :: FL, FR, UL, UR, Fstar, Flux, UstarL, UstarR, FstarL, FstarR
@@ -221,7 +221,7 @@ contains
         use sim_data, only: ch
 #endif
         implicit none
-        real(8), dimension(1:NDIM,1:NVAR_NUMBER, iGlo:iGhi, jGlo:jGhi), intent(in) :: recon_plus, recon_minus
+        real(8), dimension(1:NDIM,1:NCONSVAR_NUMBER, iGlo:iGhi, jGlo:jGhi), intent(in) :: recon_plus, recon_minus
         real(8), dimension(1:NCONSVAR_NUMBER, iGlo:iGhi, jGlo:jGhi), intent(out) :: xF, yF
 
         real(8), dimension(1:NCONSVAR_NUMBER) :: FL, FR, UL, UR, Fstar, Flux
@@ -436,7 +436,7 @@ contains
         use sim_data, only: gamma, iGlo, iGhi, jGlo, jGhi, jlo, jhi, ilo, ihi, &
                             smalld, smalle, smallp, ch
         implicit none
-        real(8), dimension(1:NDIM,1:NVAR_NUMBER, iGlo:iGhi, jGlo:jGhi), intent(in) :: recon_plus, recon_minus
+        real(8), dimension(1:NDIM,1:NCONSVAR_NUMBER, iGlo:iGhi, jGlo:jGhi), intent(in) :: recon_plus, recon_minus
         real(8), dimension(1:NCONSVAR_NUMBER, iGlo:iGhi, jGlo:jGhi), intent(out) :: xF, yF
         
         real(8), dimension(1:NCONSVAR_NUMBER) :: FL, FR, UL, UR, UL1, U2, UR1, Uhll, Flux
