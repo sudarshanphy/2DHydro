@@ -112,7 +112,8 @@ def copy_src_files(objdir, module_impls, args):
         value = ["hd","mhd"]
 
         #List of directoires with sub-directory and implementation
-        SubDirList = ["SIMULATION", "HYDRO", "IO", "GRID"]
+        SubDirList = ["HYDRO", "IO", "GRID"]
+        
         
         # Copy all the files from root directories
         if (root == src_dir):
@@ -148,8 +149,22 @@ def copy_src_files(objdir, module_impls, args):
                             dest_file = os.path.join(dest_path,file)
                             shutil.copy(src_file, dest_file)
                             print(f"Copied: {src_file}")
-                        
-             
+                            
+    # copy correct files from the problem                    
+    for root, dirs, files in os.walk(src_dir):
+        rel_path = os.path.relpath(root, src_dir)
+        if (rel_path == "SIMULATION"): 
+            for file in files: # copy files inside the src/SIMULATION
+                src_file = os.path.join(root, file)
+                dest_file = os.path.join(dest_path,file)
+                shutil.copy(src_file, dest_file)
+                print(f"Copied: {src_file}")
+        if (root == module_impls["simulation"]):
+            for file in files: # copy files inside the src/SIMULATION/problem
+                src_file = os.path.join(root, file)
+                dest_file = os.path.join(dest_path,file)
+                shutil.copy(src_file, dest_file)
+                print(f"Copied: {src_file}")      
     return
 
        

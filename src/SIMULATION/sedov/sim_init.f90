@@ -8,7 +8,6 @@ contains
                         jlo, PI, grav, usegrav, gamma, &
                         mainVar, myrank
     use grid_func, only: get_coords
-    use misc_module, only: to_upper
     use eos_module, only: eos_gete, eos_getp
 
     implicit none
@@ -23,8 +22,8 @@ contains
     x = 0.0
     y = 0.0
     
-    call get_coords('x',ilo,ihi,x)
-    call get_coords('y',jlo,jhi,y)
+    call get_coords(IAXIS,ilo,ihi,x)
+    call get_coords(JAXIS,jlo,jhi,y)
 
     solnVar(1:,ilo:,jlo:) => mainVar(1:,ilo:ihi,jlo:jhi)    
     solnVar(:,:,:) = 0.0

@@ -3,41 +3,39 @@ module applyBC_module
   implicit none
 contains
 
-  subroutine applyBC(q, Dir, Face, flip)
+  subroutine applyBC(var, q, Dir, Face)
 
-    use misc_module, only: to_upper
-    use sim_data, only: xlbctype, ylbctype, &
-                        xrbctype, yrbctype, &
+    use sim_data, only: xlbc_int, ylbc_int, &
+                        xrbc_int, yrbc_int, &
                         Gpts, ihi, ilo, jhi, jlo
     implicit none
     real, pointer :: q(:, :)
-    character(len=1), intent(in) :: Dir, Face
-    logical, optional, intent(in) :: flip
+    integer, intent(in) :: var, Dir, Face
     real :: sig
     integer :: ii
     
-    select case (to_upper(Face))
+    select case (Face)
     ! BC on the left face
-    case ('L')
+    case (LEFT)
 
-      select case (to_upper(Dir))
+      select case (dir)
       !BC in X-direction
-      case ('X')
-        if (to_upper(trim(xlbctype)) == "PERIODIC") then
+      case (IAXIS)
+        if (xlbc_int == PERIODIC) then
           !do ii  = 1, Gpts
           !  ! lower face
           !  !q(ii, :) = q(iGhi-2*Gpts+ii, :)
           !end do
 
-        else if (to_upper(trim(xlbctype)) == "FLOW") then
+        else if (xlbc_int == FLOW) then
           do ii  = 1, Gpts
             ! lower face
             q(ilo-ii, :) = q(ilo, :)
           end do
 
-        else if (to_upper(trim(xlbctype)) == "REFLECT") then
+        else if (xlbc_int == REFLECT) then
           sig = 1.000
-          if (present(flip)) sig = -1.000
+          if (var == VELX_VAR) sig = -1.000
           do ii = 1, Gpts
             ! lower face
             q(ilo-ii, :) = sig * q(ilo+ii-1, :)
@@ -45,22 +43,22 @@ contains
         end if
 
       ! BC in Y-direction  
-      case ('Y')
-        if (to_upper(trim(ylbctype)) == "PERIODIC") then
+      case (JAXIS)
+        if (ylbc_int == PERIODIC) then
           !do ii  = 1, Gpts
           !  ! lower face
           !  !q(:, ii) = q(:, yTpts-2*Gpts+ii)
           !end do
 
-        else if (to_upper(trim(ylbctype)) == "FLOW") then
+        else if (ylbc_int == FLOW) then
           do ii  = 1, Gpts
             ! lower face
             q(:, jlo-ii) = q(:, jlo)
           end do
 
-        else if (to_upper(trim(ylbctype)) == "REFLECT") then
+        else if (ylbc_int == REFLECT) then
           sig = 1.000
-          if (present(flip)) sig = -1.000
+          if (var == VELY_VAR) sig = -1.000
           do ii = 1, Gpts
             ! lower face
             q(:, jlo-ii) = sig * q(:, jlo+ii-1)
@@ -73,25 +71,25 @@ contains
       end select
     
     ! BC on the right face
-    case ('R')
-      select case (to_upper(Dir))
+    case (RIGHT)
+      select case (Dir)
       ! BC in X-direction
-      case ('X')
-        if (to_upper(trim(xrbctype)) == "PERIODIC") then
+      case (IAXIS)
+        if (xrbc_int == PERIODIC) then
           !do ii  = 1, Gpts
           !  ! upper face
           !  !q(iGhi-Gpts+ii, :) = q(Gpts + ii, :)
           !end do
 
-        else if (to_upper(trim(xrbctype)) == "FLOW") then
+        else if (xrbc_int == FLOW) then
           do ii  = 1, Gpts
             ! upper face
             q(ihi+ii, :) = q(ihi, :)
           end do
 
-        else if (to_upper(trim(xrbctype)) == "REFLECT") then
+        else if (xrbc_int == REFLECT) then
           sig = 1.000
-          if (present(flip)) sig = -1.000
+          if (var == VELX_VAR) sig = -1.000
           do ii = 1, Gpts
             ! upper face
             q(ihi+ii, :) = sig * q(ihi-ii+1, :)
@@ -99,22 +97,22 @@ contains
         end if
 
       ! BC in Y-direction
-      case ('Y')
-        if (to_upper(trim(yrbctype)) == "PERIODIC") then
+      case (JAXIS)
+        if (yrbc_int == PERIODIC) then
           !do ii  = 1, Gpts
           !  ! upper face
           !  !q(:, yTpts-Gpts+ii) = q(:, Gpts + ii)
           !end do
 
-        else if (to_upper(trim(yrbctype)) == "FLOW") then
+        else if (yrbc_int == FLOW) then
           do ii  = 1, Gpts
             ! upper face
             q(:, jhi+ii) = q(:, jhi)
           end do
 
-        else if (to_upper(trim(yrbctype)) == "REFLECT") then
+        else if (yrbc_int == REFLECT) then
           sig = 1.000
-          if (present(flip)) sig = -1.000
+          if (var == VELY_VAR) sig = -1.000
           do ii = 1, Gpts
             ! upper face
             q(:, jhi+ii) = sig * q(:, jhi-ii+1)
@@ -137,55 +135,47 @@ contains
     implicit none
     real, pointer :: q(:,:)
     integer :: n
+    logical :: notappliedxl, notappliedxr, &
+               notappliedyl, notappliedyr
     
     ! Periodic BC is already applied in the guardcell_fill routine
     ! applyBC_all should always be called after guardcell_fill routine
 
-    if (at_xlboundary) then 
+    ! defaults for custom BC is false
+    notappliedxl=.true.
+    notappliedxr=.true.
+    notappliedyl=.true.
+    notappliedyr=.true.
+
+    if ((at_xlboundary) .and. (notappliedxl)) then 
        do n=NVAR_BEGIN, NVAR_NUMBER
           q(iGlo:,jGlo:) => mainVar(n,:,:)
-          if (n == VELX_VAR) then
-            call applyBC(q,"x","L", .true.)
-          else
-            call applyBC(q,"x","L")
-         end if
+          call applyBC(n,q,IAXIS,LEFT)
          nullify(q) 
        end do
     endif
 
-    if (at_xrboundary) then 
+    if ((at_xrboundary) .and. (notappliedxr)) then 
        do n=NVAR_BEGIN, NVAR_NUMBER
           q(iGlo:,jGlo:) => mainVar(n,:,:)
-          if (n == VELX_VAR) then
-            call applyBC(q,"x","R", .true.)
-          else
-            call applyBC(q,"x","R")
-         end if
-         nullify(q) 
+          call applyBC(n,q,IAXIS,RIGHT)
+          nullify(q) 
        end do
     endif
 
-    if (at_ylboundary) then 
+    if ((at_ylboundary) .and. (notappliedyl)) then 
        do n=NVAR_BEGIN, NVAR_NUMBER
           q(iGlo:,jGlo:) => mainVar(n,:,:)
-          if (n == VELY_VAR) then
-            call applyBC(q,"y","L", .true.)
-          else
-            call applyBC(q,"y","L")
-         end if
-         nullify(q) 
+          call applyBC(n,q,JAXIS,LEFT)
+          nullify(q) 
        end do
     endif
     
-    if (at_yrboundary) then 
+    if ((at_yrboundary) .and. (notappliedyr)) then 
        do n=NVAR_BEGIN, NVAR_NUMBER
           q(iGlo:,jGlo:) => mainVar(n,:,:)
-          if (n == VELY_VAR) then
-            call applyBC(q,"y","R", .true.)
-          else
-            call applyBC(q,"y","R")
-         end if
-         nullify(q) 
+          call applyBC(n,q,JAXIS,RIGHT)
+          nullify(q) 
        end do
     endif
 

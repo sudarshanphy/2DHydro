@@ -7,7 +7,8 @@ module sim_data
   real(8), save :: gamma, cfl, grav
   real(8), save :: smalld, smallp, smalle, small
   integer, save :: nx, ny, Gpts, xTpts, yTpts, restart_no, &
-                   restart_step, nend 
+                   restart_step, nend, xlbc_int, ylbc_int, xrbc_int, &
+                   yrbc_int 
   character(len=256), save :: xlbctype, ylbctype, xrbctype, yrbctype
   character(len=256), save :: outdir, &
                               basenm, recon_method, flux_solver

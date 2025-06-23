@@ -4,6 +4,15 @@
 #define NDIM 2
 #define IAXIS 1
 #define JAXIS 2
+
+#define LEFT 121
+#define RIGHT 122
+
+#define FLOW 221
+#define REFLECT 222
+#define PERIODIC 223
+#define CUSTOM 224
+
 #if 0
  How many primitive variables are there in the simulation
 #endif

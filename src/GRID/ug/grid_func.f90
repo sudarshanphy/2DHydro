@@ -7,6 +7,7 @@ module grid_func
   subroutine grid_init()
     use sim_data
     use misc_module, only: to_upper
+    use boundary_func, only: boundary_init
     implicit none
   
     dx = (xmax - xmin) / nx
@@ -31,17 +32,6 @@ module grid_func
     jlo = yrank * lny + 1
     jhi = (yrank + 1) * lny 
  
-    ! is the block at the boundary
-    at_xlboundary = .false.
-    at_xrboundary = .false.
-    at_ylboundary = .false.
-    at_yrboundary = .false.
-
-    if (ilo == 1)  at_xlboundary = .true.
-    if (ihi == nx) at_xrboundary = .true.
-    if (jlo == 1)  at_ylboundary = .true.
-    if (jhi == ny) at_yrboundary = .true.
-
     ! compute index of interior + guard cells
     iGlo = ilo - Gpts
     iGhi = ihi + Gpts
@@ -70,6 +60,8 @@ module grid_func
     !                                              at_ylboundary, at_yrboundary 
     !print *, "myrank, ilo, ihi, jlo, jhi = ", myrank, ilo, ihi, jlo, jhi
 
+    call boundary_init()
+
   end subroutine grid_init
 
   subroutine grid_finalize()
@@ -81,9 +73,8 @@ module grid_func
 
   subroutine get_coords(Dir,lo,hi,array)
     use sim_data, only: xmin, ymin, dx, dy
-    use misc_module, only: to_upper 
     implicit none
-    character(len=1), intent(in) :: Dir
+    integer, intent(in) :: Dir
     integer, intent(in) :: lo, hi
     real(8), dimension(lo:hi), intent(out) :: array
     integer :: ii
@@ -91,11 +82,11 @@ module grid_func
     
     array(lo:hi) = 0.0
  
-    select case (to_upper(Dir))
-    case ('X')
+    select case (Dir)
+    case (IAXIS)
       lmin = xmin
       delta = dx
-    case ('Y')
+    case (JAXIS)
       lmin = ymin
       delta = dy
     case default

@@ -25,8 +25,8 @@ contains
   allocate(x(iGlo:iGhi))
   allocate(y(jGlo:jGhi))
 
-  call get_coords('x',iGlo,iGhi,x)
-  call get_coords('y',jGlo,jGhi,y)
+  call get_coords(IAXIS,iGlo,iGhi,x)
+  call get_coords(JAXIS,jGlo,jGhi,y)
 
   solnVar(1:,iGlo:,jGlo:) => mainVar(1:,:,:)
   ionum = 10
