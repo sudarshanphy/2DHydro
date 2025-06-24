@@ -28,29 +28,15 @@ contains
     solnVar(:,:,:) = 0.0
     
     if (myrank == MASTER_PROC) then 
-       print *, "Kelvin-Helmholtz (KH) problem selected"
+       print *, "Kelvin-Helmholtz (KH) problem with custom X-left boundary selected"
     end if
     do j = jlo, jhi
       do i = ilo, ihi
          ! initialize the fields
-         if (abs(y(j) - 0.5) > 0.25) then
-           solnVar(DENS_VAR, i,j) = 1.0e0
-           solnVar(VELX_VAR, i,j) = -0.5e0
-           solnVar(VELY_VAR, i,j) = 0.0e0
-           solnVar(PRES_VAR, i,j) = 2.5e0
-         else
-           solnVar(DENS_VAR, i,j) = 2.0e0
-           solnVar(VELX_VAR, i,j) = 0.5e0
-           solnVar(VELY_VAR, i,j) = 0.0e0
-           solnVar(PRES_VAR, i,j) = 2.5e0
-         end if
-         ! give velocity perturbations
-         if (abs(y(j) - 0.25) < 0.1) then
-            solnVar(VELY_VAR, i,j) = 0.05 * sin(2.0 * 2.0 * PI * x(i))
-         end if
-         if (abs(y(j) - 0.75) < 0.1) then
-            solnVar(VELY_VAR, i,j) = 0.05 * sin(2.0 * 2.0 * PI * x(i))
-         end if
+         solnVar(DENS_VAR,i,j) = 1.0
+         solnVar(PRES_VAR,i,j) = 2.5
+         solnVar(VELX_VAR,i,j) = 0.0
+         solnVar(VELY_VAR,i,j) = 0.0 
          call eos_gete(solnVar(:,i,j)) 
       end do
     end do

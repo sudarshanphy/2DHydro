@@ -1,0 +1,31 @@
+#parameter file for the 2D hydro solver
+
+basenm = "jet_test_x1_y1"
+output_dir = "./"
+xmin = 0.0
+xmax = 2.0
+ymin = -0.5
+ymax =  0.5
+nx = 256
+ny = 128
+xblk = 1
+yblk = 1
+t0 = 0.0
+tf = 0.05
+dt = 1.0e-6
+out_dt = 0.01
+nend = 100000
+gamma = 1.66666666667
+cfl = 0.5
+grav = 0.0
+usegrav = .false.
+xlbctype = "custom"
+xrbctype = "reflect"
+ylbctype = "reflect"
+yrbctype = "reflect"
+recon_method = "weno5"
+flux_solver = "hllc"
+restart = .false.
+restart_no = 0
+restart_step = 00
+
