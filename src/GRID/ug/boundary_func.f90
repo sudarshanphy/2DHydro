@@ -4,10 +4,16 @@ module boundary_func
   implicit none
   contains
 
-  subroutine boundary_init()
-    use sim_data
+  subroutine boundary_init(ilo,ihi,jlo,jhi,nx,ny)
+    use sim_data, only: at_xlboundary, at_xrboundary, &
+                        at_ylboundary, at_yrboundary, &
+                        xrank, yrank, xlbctype, xrbctype, &
+                        ylbctype, yrbctype, xlbc_int, xrbc_int, &
+                        ylbc_int, yrbc_int
+                        
     use misc_module, only: to_upper
     implicit none
+    integer, intent(in) :: ilo,ihi,jlo,jhi,nx,ny
 
     ! is the block at the boundary
     at_xlboundary = .false.
@@ -71,6 +77,9 @@ module boundary_func
         print *, "Y-right BC options are: flow, reflect, periodic, custom "
         stop
     end if
+
+    !print *, "xrank, yrank, xl, xr, yl, yr = ", xrank, yrank, at_xlboundary, at_xrboundary, &
+    !                                                          at_ylboundary, at_yrboundary
  end subroutine boundary_init
 
 end module boundary_func

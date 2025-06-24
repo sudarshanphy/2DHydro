@@ -60,7 +60,7 @@ module grid_func
     !                                              at_ylboundary, at_yrboundary 
     !print *, "myrank, ilo, ihi, jlo, jhi = ", myrank, ilo, ihi, jlo, jhi
 
-    call boundary_init()
+    call boundary_init(ilo,ihi,jlo,jhi,nx,ny)
 
   end subroutine grid_init
 
