@@ -28,7 +28,7 @@ contains
     solnVar(:,:,:) = 0.0
     
     if (myrank == MASTER_PROC) then 
-       print *, "Kelvin-Helmholtz (KH) problem with custom X-left boundary selected"
+       print *, "A Jet problem with custom X-left boundary selected"
     end if
     do j = jlo, jhi
       do i = ilo, ihi

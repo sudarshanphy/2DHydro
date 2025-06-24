@@ -67,7 +67,7 @@ contains
       end select
     end select
     
-    deallocate(y)
+    deallocate(x,y)
   end subroutine applycustomBC
 
 end module customBC
