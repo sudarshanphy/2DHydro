@@ -131,52 +131,82 @@ contains
     use sim_data, only: mainVar, iGlo, &
                         jGlo, at_xlboundary, &
                         at_ylboundary, at_xrboundary, &
-                        at_yrboundary
+                        at_yrboundary, xlbc_int, xrbc_int, &
+                        ylbc_int, yrbc_int
+    use customBC, only: applycustomBC
     implicit none
     real, pointer :: q(:,:)
     integer :: n
-    logical :: notappliedxl, notappliedxr, &
-               notappliedyl, notappliedyr
     
     ! Periodic BC is already applied in the guardcell_fill routine
     ! applyBC_all should always be called after guardcell_fill routine
 
-    ! defaults for custom BC is false
-    notappliedxl=.true.
-    notappliedxr=.true.
-    notappliedyl=.true.
-    notappliedyr=.true.
+    if (at_xlboundary) then
+       if (xlbc_int == CUSTOM) then
+          do n=NVAR_BEGIN, NVAR_NUMBER
+             q(iGlo:,jGlo:) => mainVar(n,:,:)
+             call applycustomBC(n,q,IAXIS,LEFT)
+             nullify(q) 
+          end do
 
-    if ((at_xlboundary) .and. (notappliedxl)) then 
-       do n=NVAR_BEGIN, NVAR_NUMBER
-          q(iGlo:,jGlo:) => mainVar(n,:,:)
-          call applyBC(n,q,IAXIS,LEFT)
-         nullify(q) 
-       end do
+       else 
+          do n=NVAR_BEGIN, NVAR_NUMBER
+             q(iGlo:,jGlo:) => mainVar(n,:,:)
+             call applyBC(n,q,IAXIS,LEFT)
+             nullify(q) 
+          end do
+       end if
     endif
 
-    if ((at_xrboundary) .and. (notappliedxr)) then 
-       do n=NVAR_BEGIN, NVAR_NUMBER
-          q(iGlo:,jGlo:) => mainVar(n,:,:)
-          call applyBC(n,q,IAXIS,RIGHT)
-          nullify(q) 
-       end do
+    if (at_xrboundary) then
+       if (xrbc_int == CUSTOM) then
+          do n=NVAR_BEGIN, NVAR_NUMBER
+             q(iGlo:,jGlo:) => mainVar(n,:,:)
+             call applycustomBC(n,q,IAXIS,RIGHT)
+             nullify(q) 
+          end do
+       
+       else 
+          do n=NVAR_BEGIN, NVAR_NUMBER
+             q(iGlo:,jGlo:) => mainVar(n,:,:)
+             call applyBC(n,q,IAXIS,RIGHT)
+             nullify(q) 
+          end do
+       end if
     endif
 
-    if ((at_ylboundary) .and. (notappliedyl)) then 
-       do n=NVAR_BEGIN, NVAR_NUMBER
-          q(iGlo:,jGlo:) => mainVar(n,:,:)
-          call applyBC(n,q,JAXIS,LEFT)
-          nullify(q) 
-       end do
+    if (at_ylboundary) then
+       if (ylbc_int == CUSTOM) then
+          do n=NVAR_BEGIN, NVAR_NUMBER
+             q(iGlo:,jGlo:) => mainVar(n,:,:)
+             call applycustomBC(n,q,JAXIS,LEFT)
+             nullify(q) 
+          end do
+       
+       else 
+          do n=NVAR_BEGIN, NVAR_NUMBER
+             q(iGlo:,jGlo:) => mainVar(n,:,:)
+             call applyBC(n,q,JAXIS,LEFT)
+             nullify(q) 
+          end do
+       end if
     endif
     
-    if ((at_yrboundary) .and. (notappliedyr)) then 
-       do n=NVAR_BEGIN, NVAR_NUMBER
-          q(iGlo:,jGlo:) => mainVar(n,:,:)
-          call applyBC(n,q,JAXIS,RIGHT)
-          nullify(q) 
-       end do
+    if (at_yrboundary) then 
+       if (yrbc_int == CUSTOM) then
+          do n=NVAR_BEGIN, NVAR_NUMBER
+             q(iGlo:,jGlo:) => mainVar(n,:,:)
+             call applycustomBC(n,q,JAXIS,RIGHT)
+             nullify(q) 
+          end do
+       
+       else
+          do n=NVAR_BEGIN, NVAR_NUMBER
+             q(iGlo:,jGlo:) => mainVar(n,:,:)
+             call applyBC(n,q,JAXIS,RIGHT)
+             nullify(q) 
+          end do
+       end if
     endif
 
   end subroutine applyBC_all
