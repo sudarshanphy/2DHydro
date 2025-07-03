@@ -2,9 +2,8 @@
 This is a code that I wrote for fun. I performed a few standard simulations with it.
 The parameter files for these simulations are provided in the repo.
 
-## Running Code
-The code can be run with
-`./setup [arguments]`
+## Running the Code
+The code can be run with `./setup [arguments]`. <br/>
 For help use `./setup --help`
 
 ## Sedov-Blast wave problem
