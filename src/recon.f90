@@ -1,4 +1,5 @@
 module recon_module
+#include "param.h"
     implicit none
 contains
   function minmod(a,b) result(c)
@@ -11,9 +12,9 @@ contains
 
   end function minmod
 
-  subroutine get_facevalue_weno(qm1, q, qp1, fplus12, fminus12, check)
+  subroutine get_facevalue_weno(qin, fplus12, fminus12, check)
         implicit none
-        real, intent(in) :: qm1, q, qp1
+        real, intent(in), dimension(1:3) :: qin
         real, intent(out):: fplus12, fminus12
         logical, intent(in), optional :: check
 
@@ -24,6 +25,7 @@ contains
         real :: qplus12, qminus12
         integer :: i
         real :: delp, delm
+        real :: qm1, q, qp1
         ! coefficients for the polynomial
         real, dimension(2) :: c0 = (/1.00/2.00, 1.00/2.00/)
         real, dimension(2) :: c1 = (/-1.00/2.00, 3.00/2.00/)
@@ -31,6 +33,10 @@ contains
         ! linear weights 
         real, dimension(2) :: dcoeff = (/2.00/3.00, 1.00/3.00/)
         real, dimension(2) :: dbarcoeff = (/1.00/3.00, 2.00/3.00/)
+
+        qm1 = qin(1)
+        q = qin(2)
+        qp1 = qin(3)
 
         beta(1) = (qp1 - q)**2
         beta(2) = (q - qm1)**2
@@ -73,9 +79,9 @@ contains
 
   end subroutine get_facevalue_weno
 
-  subroutine get_facevalue_weno5z(qm2, qm1, q, qp1, qp2, fplus12, fminus12, check)
+  subroutine get_facevalue_weno5z(qin, fplus12, fminus12, check)
         implicit none
-        real, intent(in) :: qm2, qm1, q, qp1, qp2
+        real, intent(in), dimension(1:5) :: qin
         real, intent(out):: fplus12, fminus12
         logical, intent(in), optional :: check
 
@@ -86,6 +92,7 @@ contains
         real :: qplus12, qminus12
         integer :: i
         real :: delp, delm, absbeta_diff
+        real :: qm2, qm1, q, qp1, qp2
 
         ! adapted from flashx spark
         real :: n13o12 = 13.0/12.0
@@ -107,6 +114,11 @@ contains
         ! linear weights for i - 1/2
         real, dimension(3) :: dbarcoeff = (/0.3, 0.6, 0.1/)
       
+        qm2 = qin(1)
+        qm1 = qin(2)
+        q = qin(3)
+        qp1 = qin(4)
+        qp2 = qin(5)
 
         beta(1) = n13o12*( qm2 - 2.*qm1 + q )**2 &
            + 0.25*( qm2 - 4.*qm1 + 3.*q )**2
@@ -157,95 +169,44 @@ contains
 
   end subroutine get_facevalue_weno5z
 
-  subroutine recon_getcellfaces(dens, velx, vely, pres, dt, &
-                                   !method, slimiter, &
-                                   xr_plus, xu_plus, xv_plus, xp_plus, &
-                                   xr_minus, xu_minus, xv_minus, xp_minus, &
-                                   yr_plus, yu_plus, yv_plus, yp_plus, &
-                                   yr_minus, yu_minus, yv_minus, yp_minus)
+  subroutine recon_getcellfaces(dt, solnVar, x_plus, x_minus, y_plus, y_minus)
 
         use sim_data, only: xTpts, yTpts, dx, dy, gamma, ilo, ihi, jlo, jhi, & 
-                            recon_method
+                            recon_method, iGlo, iGhi, jGlo, jGhi
         use misc_module, only: to_upper
         implicit none
         real, intent(in) :: dt
-        real, dimension(xTpts,yTpts), intent(in) :: dens, velx, vely, pres
-        !character(len=*) :: method
-        !character(len=*) :: slimiter
+        real, pointer :: solnVar(:,:,:)
+        real, dimension(NCONSVAR_NUMBER, iGlo:iGhi,jGlo:jGhi), intent(out) :: x_plus, x_minus, y_plus, y_minus
+        
+        integer :: i, j, n
 
-        real, dimension(xTpts, yTpts), intent(out) :: xr_plus, xu_plus, xv_plus, xp_plus
-        real, dimension(xTpts, yTpts), intent(out) :: xr_minus, xu_minus, xv_minus, xp_minus
-        real, dimension(xTpts, yTpts), intent(out) :: yr_plus, yu_plus, yv_plus, yp_plus
-        real, dimension(xTpts, yTpts), intent(out) :: yr_minus, yu_minus, yv_minus, yp_minus
+        x_plus(:,:,:) = 0.0
+        x_minus(:,:,:) = 0.0
 
-        integer :: i, j
-
-        xr_plus = 0.0
-        xu_plus = 0.0
-        xv_plus = 0.0
-        xp_plus = 0.0
-
-        xr_minus = 0.0
-        xu_minus = 0.0
-        xv_minus = 0.0
-        xp_minus = 0.0
-
-        yr_plus = 0.0
-        yu_plus = 0.0
-        yv_plus = 0.0
-        yp_plus = 0.0
-
-        yr_minus = 0.0
-        yu_minus = 0.0
-        yv_minus = 0.0
-        yp_minus = 0.0
+        y_plus(:,:,:) = 0.0
+        y_minus(:,:,:) = 0.0
 
         if (to_upper(trim(recon_method)) == "WENO3") then
-            do i = ilo-1, ihi+1
-                do j = jlo-1, jhi+1
-
-                    call get_facevalue_weno(dens(i - 1, j), dens(i, j), dens(i + 1, j), &
-                      xr_plus(i, j), xr_minus(i, j))
-                    call get_facevalue_weno(velx(i - 1, j), velx(i, j), velx(i + 1, j), &
-                      xu_plus(i, j), xu_minus(i, j))
-                    call get_facevalue_weno(vely(i - 1, j), vely(i, j), vely(i + 1, j), &
-                      xv_plus(i, j), xv_minus(i, j))
-                    call get_facevalue_weno(pres(i - 1, j), pres(i, j), pres(i + 1, j), &
-                      xp_plus(i, j), xp_minus(i, j))
-
-                    call get_facevalue_weno(dens(i, j - 1), dens(i, j), dens(i, j + 1), &
-                      yr_plus(i, j), yr_minus(i, j))
-                    call get_facevalue_weno(velx(i, j - 1), velx(i, j), velx(i, j + 1), &
-                      yu_plus(i, j), yu_minus(i, j))
-                    call get_facevalue_weno(vely(i, j - 1), vely(i, j), vely(i, j + 1), &
-                      yv_plus(i, j), yv_minus(i, j))
-                    call get_facevalue_weno(pres(i, j - 1), pres(i, j), pres(i, j + 1), &
-                      yp_plus(i, j), yp_minus(i, j))
-
+            do n = 1, NCONSVAR_NUMBER
+               do j = jlo-1, jhi+1
+                   do i = ilo-1, ihi+1
+                      call get_facevalue_weno(solnVar(n,i - 1: i + 1, j), &
+                                          x_plus(n,i, j), x_minus(n,i, j))
+                      call get_facevalue_weno(solnVar(n,i, j - 1: j + 1), &
+                                          y_plus(n,i, j), y_minus(n,i, j))
+                   end do
                 end do
             end do
         else if (to_upper(trim(recon_method)) == "WENO5") then
-            do i = ilo-1, ihi+1
-                do j = jlo-1, jhi+1
-
-                call get_facevalue_weno5z(dens(i - 2, j), dens(i - 1, j), dens(i, j), &
-                  dens(i + 1, j), dens(i + 2, j), xr_plus(i, j), xr_minus(i, j))
-                call get_facevalue_weno5z(velx(i - 2, j), velx(i - 1, j), velx(i, j), &
-                  velx(i + 1, j), velx(i + 2, j), xu_plus(i, j), xu_minus(i, j))
-                call get_facevalue_weno5z(vely(i - 2, j), vely(i - 1, j), vely(i, j), &
-                  vely(i + 1, j), vely(i + 2, j), xv_plus(i, j), xv_minus(i, j))
-                call get_facevalue_weno5z(pres(i - 2, j), pres(i - 1, j), pres(i, j), &
-                  pres(i + 1, j), pres(i + 2, j), xp_plus(i, j), xp_minus(i, j))
-                                                                                                                   
-                call get_facevalue_weno5z(dens(i, j - 2), dens(i, j - 1), dens(i, j), &
-                  dens(i, j + 1), dens(i, j + 2), yr_plus(i, j), yr_minus(i, j))
-                call get_facevalue_weno5z(velx(i, j - 2), velx(i, j - 1), velx(i, j), &
-                  velx(i, j + 1), velx(i, j + 2), yu_plus(i, j), yu_minus(i, j))
-                call get_facevalue_weno5z(vely(i, j - 2), vely(i, j - 1), vely(i, j), &
-                  vely(i, j + 1), vely(i, j + 2), yv_plus(i, j), yv_minus(i, j))
-                call get_facevalue_weno5z(pres(i, j - 2), pres(i, j - 1), pres(i, j), &
-                  pres(i, j + 1), pres(i, j + 2), yp_plus(i, j), yp_minus(i, j))
-
+            do n = 1, NCONSVAR_NUMBER
+               do j = jlo-1, jhi+1
+                   do i = ilo-1, ihi+1
+                       call get_facevalue_weno5z(solnVar(n,i - 2: i + 2, j), &
+                                           x_plus(n,i, j), x_minus(n,i, j))
+                       call get_facevalue_weno5z(solnVar(n,i, j - 2: j + 2), &
+                                           y_plus(n,i, j), y_minus(n,i, j))
+                    end do
                 end do
             end do
         end if

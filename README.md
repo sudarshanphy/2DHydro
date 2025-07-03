@@ -17,3 +17,15 @@ Performed using a `100 x 300` grid.
 
 https://github.com/user-attachments/assets/fccd9944-18d1-4832-b176-2fd8b6b9648d
 
+## 2D Riemann problem
+
+https://github.com/user-attachments/assets/940f2f6d-cf63-4eb4-8496-b0084b3e8611
+
+# 2D MHD
+Ideal MHD equations are being added to the code. 
+
+## 2D Orszag-Tang Vortex problem
+Perfomed using a `512 x 512` grid.
+
+https://github.com/user-attachments/assets/9074f9f5-c4a3-4380-b70e-d01abafd4e05
+
