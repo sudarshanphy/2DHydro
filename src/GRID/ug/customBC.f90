@@ -1,45 +1,34 @@
-module customBC
+module customBC_module
 #include "param.h"
   implicit none
 contains
 
-  subroutine applycustomBC(var, q, dir, face)
-    use sim_data, only: xlbc_int, ylbc_int, &
-                        xrbc_int, yrbc_int, &
-                        Gpts, ihi, ilo, jhi, jlo
+  subroutine applycustomBC(var, dir, face)
+                        
+    use sim_data, only: Gpts, ihi, ilo, jhi, jlo, &
+                        jGlo, jGhi, iGlo, iGhi, PI, &
+                        myrank, mainVar
+    use grid_func, only: get_coords
     implicit none
     real, pointer :: q(:, :)
     integer, intent(in) :: var, Dir, Face
     real :: sig
-    integer :: ii
-    
-    select case (Face)
-    ! BC on the left face
-    case (LEFT)
+    integer :: ii, j, i
+    real, allocatable, dimension(:) :: x,y
 
-      select case (Dir)
-      !BC in X-direction
-      case (IAXIS)
-           ! Apply boundary at XL
-      case (JAXIS)
-           ! Apply boundary at YL
-      case default
+    !allocate(x(iGlo:iGhi), y(jGlo:jGhi))
+    ! 
+    !q(iGlo:, jGlo:) => mainVar(var,:,:)
 
-      end select
+    !call get_coords(IAXIS,iGlo,iGhi,x)
+    !call get_coords(JAXIS,jGlo,jGhi,y)
 
-    case (RIGHT)
-
-      select case (Dir)
-      !BC in X-direction
-      case (IAXIS)
-           ! Apply boundary at XR
-      case (JAXIS)
-           ! Apply boundary at YR
-      case default
-
-      end select
-    end select
-
+    !if ((Dir == IAXIS) .and. (Face == LEFT)) then
+    !    ! Apply boundary at XL
+    !end if
+    ! 
+    !nullify(q) 
+    !deallocate(x,y)
   end subroutine applycustomBC
 
-end module customBC
+end module customBC_module

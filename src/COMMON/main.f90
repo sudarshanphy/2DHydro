@@ -45,6 +45,8 @@ program hydro
     !initialize the problem
     call init_problem()
                                             
+    call guardcell_fill()
+    call applyBC_all()
     call write_output(t0, step, outputno) 
 
   else
@@ -53,14 +55,14 @@ program hydro
     call restart_problem(restart_no, t0)
     step = restart_step
     outputno = restart_no
+    call guardcell_fill()
+    call applyBC_all()
     call write_output(t0, step, outputno, .true.) 
 
   end if
 
   call CPU_TIME(timer_start)
   timer_step0 = 0
-  call guardcell_fill()
-  call applyBC_all()
   
   time = t0
   timeio = time + out_dt

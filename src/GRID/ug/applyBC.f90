@@ -3,139 +3,88 @@ module applyBC_module
   implicit none
 contains
 
-  subroutine applyBC(var, q, Dir, Face)
+  subroutine applydefBC(var, Dir, Face, bc_int)
 
     use sim_data, only: xlbc_int, ylbc_int, &
                         xrbc_int, yrbc_int, &
-                        Gpts, ihi, ilo, jhi, jlo
-    implicit none
-    real, pointer :: q(:, :)
-    integer, intent(in) :: var, Dir, Face
-    real :: sig
-    integer :: ii
-    
-    select case (Face)
-    ! BC on the left face
-    case (LEFT)
-
-      select case (dir)
-      !BC in X-direction
-      case (IAXIS)
-        if (xlbc_int == PERIODIC) then
-          !do ii  = 1, Gpts
-          !  ! lower face
-          !  !q(ii, :) = q(iGhi-2*Gpts+ii, :)
-          !end do
-
-        else if (xlbc_int == FLOW) then
-          do ii  = 1, Gpts
-            ! lower face
-            q(ilo-ii, :) = q(ilo, :)
-          end do
-
-        else if (xlbc_int == REFLECT) then
-          sig = 1.000
-          if (var == VELX_VAR) sig = -1.000
-          do ii = 1, Gpts
-            ! lower face
-            q(ilo-ii, :) = sig * q(ilo+ii-1, :)
-          end do
-        end if
-
-      ! BC in Y-direction  
-      case (JAXIS)
-        if (ylbc_int == PERIODIC) then
-          !do ii  = 1, Gpts
-          !  ! lower face
-          !  !q(:, ii) = q(:, yTpts-2*Gpts+ii)
-          !end do
-
-        else if (ylbc_int == FLOW) then
-          do ii  = 1, Gpts
-            ! lower face
-            q(:, jlo-ii) = q(:, jlo)
-          end do
-
-        else if (ylbc_int == REFLECT) then
-          sig = 1.000
-          if (var == VELY_VAR) sig = -1.000
-          do ii = 1, Gpts
-            ! lower face
-            q(:, jlo-ii) = sig * q(:, jlo+ii-1)
-          end do
-        end if
-
-      case default
-          print *, "Wrong!! This code only solves in 2D"
-          stop
-      end select
-    
-    ! BC on the right face
-    case (RIGHT)
-      select case (Dir)
-      ! BC in X-direction
-      case (IAXIS)
-        if (xrbc_int == PERIODIC) then
-          !do ii  = 1, Gpts
-          !  ! upper face
-          !  !q(iGhi-Gpts+ii, :) = q(Gpts + ii, :)
-          !end do
-
-        else if (xrbc_int == FLOW) then
-          do ii  = 1, Gpts
-            ! upper face
-            q(ihi+ii, :) = q(ihi, :)
-          end do
-
-        else if (xrbc_int == REFLECT) then
-          sig = 1.000
-          if (var == VELX_VAR) sig = -1.000
-          do ii = 1, Gpts
-            ! upper face
-            q(ihi+ii, :) = sig * q(ihi-ii+1, :)
-          end do
-        end if
-
-      ! BC in Y-direction
-      case (JAXIS)
-        if (yrbc_int == PERIODIC) then
-          !do ii  = 1, Gpts
-          !  ! upper face
-          !  !q(:, yTpts-Gpts+ii) = q(:, Gpts + ii)
-          !end do
-
-        else if (yrbc_int == FLOW) then
-          do ii  = 1, Gpts
-            ! upper face
-            q(:, jhi+ii) = q(:, jhi)
-          end do
-
-        else if (yrbc_int == REFLECT) then
-          sig = 1.000
-          if (var == VELY_VAR) sig = -1.000
-          do ii = 1, Gpts
-            ! upper face
-            q(:, jhi+ii) = sig * q(:, jhi-ii+1)
-          end do
-        end if 
-
-      case default
-          print *, "Wrong!! This code only solves in 2D"
-          stop
-      end select
-
-    end select  
-  end subroutine applyBC
-  
-  subroutine applyBC_all()
-    use sim_data, only: mainVar, iGlo, &
-                        jGlo, at_xlboundary, &
-                        at_ylboundary, at_xrboundary, &
-                        at_yrboundary, xlbc_int, xrbc_int, &
-                        ylbc_int, yrbc_int
-    use customBC, only: applycustomBC
+                        Gpts, ihi, ilo, jhi, jlo, &
+                        iGlo, jGlo, iGhi, jGhi, myrank, &
+                        mainVar
     implicit none
     real, pointer :: q(:,:)
+    integer, intent(in) :: var, Dir, Face, bc_int
+    real :: sig
+    integer :: ii
+
+    if (bc_int == CUSTOM) return
+
+    q(iGlo:, jGlo:) => mainVar(var,iGlo:iGhi,jGlo:jGhi)
+
+    if (Face == LEFT .and. Dir == IAXIS) then
+      if (bc_int == FLOW) then
+        do ii = 1, Gpts
+          q(ilo-ii, :) = q(ilo, :)
+        end do
+      else if (bc_int == REFLECT) then
+        sig = 1.000
+        if (var == VELX_VAR) sig = -1.000
+        do ii = 1, Gpts
+          q(ilo-ii, :) = sig * q(ilo+ii-1, :)
+        end do
+      end if
+    else if (Face == LEFT .and. Dir == JAXIS) then
+      if (bc_int == FLOW) then
+        do ii = 1, Gpts
+          q(:, jlo-ii) = q(:, jlo)
+        end do
+      else if (bc_int == REFLECT) then
+        sig = 1.000
+        if (var == VELY_VAR) sig = -1.000
+        do ii = 1, Gpts
+          q(:, jlo-ii) = sig * q(:, jlo+ii-1)
+        end do
+      end if
+    else if (Face == RIGHT .and. Dir == IAXIS) then
+      if (bc_int == FLOW) then
+        do ii = 1, Gpts
+          q(ihi+ii, :) = q(ihi, :)
+        end do
+      else if (bc_int == REFLECT) then
+        sig = 1.000
+        if (var == VELX_VAR) sig = -1.000
+        do ii = 1, Gpts
+          q(ihi+ii, :) = sig * q(ihi-ii+1, :)
+        end do
+      end if
+    else if (Face == RIGHT .and. Dir == JAXIS) then
+      if (bc_int == FLOW) then
+        do ii = 1, Gpts
+          q(:, jhi+ii) = q(:, jhi)
+        end do
+      else if (bc_int == REFLECT) then
+        sig = 1.000
+        if (var == VELY_VAR) then
+                sig = -1.000
+        end if
+        do ii = 1, Gpts
+          q(:, jhi+ii) = sig * q(:, jhi-ii+1)
+        end do
+      end if
+    else
+      print *, "Wrong!! This code only solves in 2D"
+      stop
+    end if
+
+    nullify(q)
+  end subroutine applydefBC
+
+  subroutine applyBC_all()
+    use sim_data, only: at_xlboundary, &
+                        at_ylboundary, at_xrboundary, &
+                        at_yrboundary, xlbc_int, xrbc_int, &
+                        ylbc_int, yrbc_int 
+    use customBC_module, only: applycustomBC
+    implicit none
     integer :: n
     
     ! Periodic BC is already applied in the guardcell_fill routine
@@ -144,16 +93,12 @@ contains
     if (at_xlboundary) then
        if (xlbc_int == CUSTOM) then
           do n=NVAR_BEGIN, NVAR_NUMBER
-             q(iGlo:,jGlo:) => mainVar(n,:,:)
-             call applycustomBC(n,q,IAXIS,LEFT)
-             nullify(q) 
+             call applycustomBC(n,IAXIS,LEFT)
           end do
 
        else 
           do n=NVAR_BEGIN, NVAR_NUMBER
-             q(iGlo:,jGlo:) => mainVar(n,:,:)
-             call applyBC(n,q,IAXIS,LEFT)
-             nullify(q) 
+             call applydefBC(n,IAXIS,LEFT,xlbc_int)
           end do
        end if
     endif
@@ -161,16 +106,12 @@ contains
     if (at_xrboundary) then
        if (xrbc_int == CUSTOM) then
           do n=NVAR_BEGIN, NVAR_NUMBER
-             q(iGlo:,jGlo:) => mainVar(n,:,:)
-             call applycustomBC(n,q,IAXIS,RIGHT)
-             nullify(q) 
+             call applycustomBC(n,IAXIS,RIGHT)
           end do
        
        else 
           do n=NVAR_BEGIN, NVAR_NUMBER
-             q(iGlo:,jGlo:) => mainVar(n,:,:)
-             call applyBC(n,q,IAXIS,RIGHT)
-             nullify(q) 
+             call applydefBC(n,IAXIS,RIGHT,xrbc_int)
           end do
        end if
     endif
@@ -178,16 +119,12 @@ contains
     if (at_ylboundary) then
        if (ylbc_int == CUSTOM) then
           do n=NVAR_BEGIN, NVAR_NUMBER
-             q(iGlo:,jGlo:) => mainVar(n,:,:)
-             call applycustomBC(n,q,JAXIS,LEFT)
-             nullify(q) 
+             call applycustomBC(n,JAXIS,LEFT)
           end do
        
        else 
           do n=NVAR_BEGIN, NVAR_NUMBER
-             q(iGlo:,jGlo:) => mainVar(n,:,:)
-             call applyBC(n,q,JAXIS,LEFT)
-             nullify(q) 
+             call applydefBC(n,JAXIS,LEFT,ylbc_int)
           end do
        end if
     endif
@@ -195,16 +132,12 @@ contains
     if (at_yrboundary) then 
        if (yrbc_int == CUSTOM) then
           do n=NVAR_BEGIN, NVAR_NUMBER
-             q(iGlo:,jGlo:) => mainVar(n,:,:)
-             call applycustomBC(n,q,JAXIS,RIGHT)
-             nullify(q) 
+             call applycustomBC(n,JAXIS,RIGHT)
           end do
        
        else
           do n=NVAR_BEGIN, NVAR_NUMBER
-             q(iGlo:,jGlo:) => mainVar(n,:,:)
-             call applyBC(n,q,JAXIS,RIGHT)
-             nullify(q) 
+             call applydefBC(n,JAXIS,RIGHT,yrbc_int)
           end do
        end if
     endif
