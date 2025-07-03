@@ -1,0 +1,30 @@
+#parameter file for the 2D hydro solver
+
+basenm = "sedov_test_x1_y1"
+output_dir = "./"
+xmin = -0.5
+xmax = 0.5
+ymin = -0.75
+ymax = 0.75
+nx = 200
+ny = 300
+xblk = 1
+yblk = 1
+t0 = 0.0
+tf = 1.0
+dt = 1.0e-6
+out_dt = 0.01
+nend = 100000
+gamma = 1.66666666666
+cfl = 0.3
+grav = 0.0
+usegrav = .false.
+xlbctype = "periodic"
+xrbctype = "periodic"
+ylbctype = "periodic"
+yrbctype = "periodic"
+recon_method = "weno3"
+flux_solver = "hlle"
+restart = .false.
+restart_no = 0
+restart_step = 00
