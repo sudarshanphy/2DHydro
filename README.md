@@ -2,6 +2,11 @@
 This is a code that I wrote for fun. I performed a few standard simulations with it.
 The parameter files for these simulations are provided in the repo.
 
+## Running Code
+The code can be run with
+`./setup [arguments]`
+For help use `./setup --help`
+
 ## Sedov-Blast wave problem
 Simulation is performed using a `400 x 600` cell grid with 2 different reconstruction method: `WENO3` and `WENO5`. Need to fix the scale on python plot.
 
