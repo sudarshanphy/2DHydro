@@ -35,7 +35,7 @@ contains
 #endif
       implicit none
       real, dimension(iGlo:iGhi, jGlo:jGhi) :: xsmax, ysmax
-      real :: cs, xcmax, ycmax   !sound speed
+      real :: cs, cs2, xcmax, ycmax   !sound speed
 #ifdef MHD  
       real :: cax, cay, cfx, cfy, B2, cB2 !alfven wave and magnetosonic wave
       real :: localch
@@ -50,13 +50,14 @@ contains
 
       do j = jGlo, jGhi
         do i = iGlo, iGhi
-           cs = sqrt(gamma * solnVar(PRES_VAR,i,j) / solnVar(DENS_VAR,i,j))
+           cs2 = gamma * solnVar(PRES_VAR,i,j) / solnVar(DENS_VAR,i,j)
 
-           if (cs < 0.0) then
+           if (cs2 < 0.0) then
              print *, "Imaginary sound speed!"
              print *, "At i,j, with gamma, pres, dens = ", i, j, gamma, &
                            solnVar(PRES_VAR,i,j), solnVar(DENS_VAR,i,j)
            endif
+           cs = sqrt(cs2)
            xcmax = cs
            ycmax = cs
 #ifdef MHD
@@ -64,10 +65,10 @@ contains
            cay = solnVar(BMFY_VAR,i,j) / sqrt(solnVar(DENS_VAR,i,j))
            B2 =  sum(solnVar(BMFX_VAR:BMFZ_VAR,i,j)*solnVar(BMFX_VAR:BMFZ_VAR,i,j))
            cB2 = B2 / solnVar(DENS_VAR,i,j)
-           cfx = sqrt(0.5 * ((cs + cB2) + sqrt((cs + cB2)**2 - 4.0 * cs * cax * cax)))
-           cfy = sqrt(0.5 * ((cs + cB2) + sqrt((cs + cB2)**2 - 4.0 * cs * cay * cay)))
+           cfx = sqrt(0.5 * ((cs2 + cB2) + sqrt((cs2 + cB2)**2 - 4.0 * cs2 * cax * cax)))
+           cfy = sqrt(0.5 * ((cs2 + cB2) + sqrt((cs2 + cB2)**2 - 4.0 * cs2 * cay * cay)))
            xcmax = cfx
-           xcmax = cfy
+           ycmax = cfy
 #endif
            xsmax(i,j) = xcmax + abs(solnVar(VELX_VAR,i,j))
            ysmax(i,j) = ycmax + abs(solnVar(VELY_VAR,i,j))
