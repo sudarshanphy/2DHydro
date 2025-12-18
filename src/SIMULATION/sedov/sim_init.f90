@@ -44,6 +44,11 @@ contains
            solnVar(PRES_VAR, i,j) = 1.0e1
          end if
          call eos_gete(solnVar(:,i,j))
+#ifdef MHD
+         solnVar(BMFX_VAR, i,j) = 1.0/sqrt(2.0)
+         solnVar(BMFY_VAR, i,j) = 1.0/sqrt(2.0)
+         solnVar(BMFZ_VAR, i,j) = 0.0
+#endif
       end do
     end do
     deallocate(x,y)  
