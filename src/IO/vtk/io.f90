@@ -51,12 +51,16 @@ contains
 
     if (present(restart_init)) then
       subdir    = trim(adjustl(outdir))//"/vti_reinit_"//trim(adjustl(int_to_str))
-      pvti_name = trim(adjustl(outdir))//"/"//trim(adjustl(basenm))//"_reinit_"//trim(adjustl(int_to_str))//".pvti"
-      vti_name  = trim(subdir)//"/"//trim(adjustl(basenm))//"_reinit_"//trim(adjustl(rank_to_str))//"_"//trim(adjustl(int_to_str))//".vti"
+      pvti_name = trim(adjustl(outdir))//"/"//trim(adjustl(basenm))//"_reinit_"//&
+        trim(adjustl(int_to_str))//".pvti"
+      vti_name  = trim(subdir)//"/"//trim(adjustl(basenm))//"_reinit_"//&
+        trim(adjustl(rank_to_str))//"_"//trim(adjustl(int_to_str))//".vti"
     else
       subdir    = trim(adjustl(outdir))//"/vti_"//trim(adjustl(int_to_str))
-      pvti_name = trim(adjustl(outdir))//"/"//trim(adjustl(basenm))//"_"//trim(adjustl(int_to_str))//".pvti"
-      vti_name  = trim(subdir)//"/"//trim(adjustl(basenm))//"_"//trim(adjustl(rank_to_str))//"_"//trim(adjustl(int_to_str))//".vti"
+      pvti_name = trim(adjustl(outdir))//"/"//trim(adjustl(basenm))//"_"//&
+        trim(adjustl(int_to_str))//".pvti"
+      vti_name  = trim(subdir)//"/"//trim(adjustl(basenm))//"_"//&
+        trim(adjustl(rank_to_str))//"_"//trim(adjustl(int_to_str))//".vti"
     endif
 
     if (myrank == 0) then
@@ -123,16 +127,16 @@ contains
                        '" Origin="'//trim(real3_str(xmin,ymin,zorigin))// &
                        '" Spacing="'//trim(real3_str(dx,dy_out,dz_out))//'">'
 
-    write(ionum,'(A)') '    <Piece Extent="'//trim(extent_str(i0p,i1p,j0p,j1p,k0p,k1p))//'">'
-
     write(ionum,'(A)') '      <FieldData>'
-    write(ionum,'(A)') '        <DataArray type="Float64" Name="time" NumberOfTuples="1" format="ascii">'
-    write(ionum,'(ES25.18)') dble(t)
-    write(ionum,'(A)') '        </DataArray>'
-    write(ionum,'(A)') '        <DataArray type="Int32" Name="step" NumberOfTuples="1" format="ascii">'
+    write(ionum,'(A)') '        <DataArray type="Int32" Name="CYCLE" NumberOfTuples="1" format="ascii">'
     write(ionum,'(I0)') step
     write(ionum,'(A)') '        </DataArray>'
+    write(ionum,'(A)') '        <DataArray type="Float64" Name="TIME" NumberOfTuples="1" format="ascii">'
+    write(ionum,'(ES25.18)') dble(t)
+    write(ionum,'(A)') '        </DataArray>'
     write(ionum,'(A)') '      </FieldData>'
+    
+    write(ionum,'(A)') '    <Piece Extent="'//trim(extent_str(i0p,i1p,j0p,j1p,k0p,k1p))//'">'
 
     write(ionum,'(A)') '      <CellData Scalars="dens">'
 
@@ -174,6 +178,15 @@ contains
       write(ionum,'(A)') '  <PImageData WholeExtent="'//trim(extent_str(whole_i0,whole_i1,whole_j0,whole_j1,whole_k0,whole_k1))// &
                          '" Origin="'//trim(real3_str(xmin,ymin,zorigin))// &
                          '" Spacing="'//trim(real3_str(dx,dy_out,dz_out))//'">'
+
+      !write(ionum,'(A)') '      <FieldData>'
+      !write(ionum,'(A)') '        <DataArray type="Int32" Name="CYCLE" NumberOfTuples="1" format="ascii">'
+      !write(ionum,'(I0)') step
+      !write(ionum,'(A)') '        </DataArray>'
+      !write(ionum,'(A)') '        <DataArray type="Float64" Name="TIME" NumberOfTuples="1" format="ascii">'
+      !write(ionum,'(ES25.18)') dble(t)
+      !write(ionum,'(A)') '        </DataArray>'
+      !write(ionum,'(A)') '      </FieldData>'
 
       write(ionum,'(A)') '    <PCellData Scalars="dens">'
       call write_p_scalar(ionum, "dens")

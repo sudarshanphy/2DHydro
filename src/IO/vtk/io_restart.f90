@@ -66,7 +66,7 @@ contains
     solnVar(:,:,:) = 0.0
 
     ! time
-    call seek_to_dataarray(u, 'time')
+    call seek_to_dataarray(u, 'TIME')
     call read_n_reals_from_dataarray(u, 1, buf)
     time = real(buf(1))
     deallocate(buf)
