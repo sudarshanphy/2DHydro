@@ -1,4 +1,4 @@
-# 2DHydro
+# MANTA
 This is a code that I wrote for fun. I performed a few standard simulations with it.
 The parameter files for these simulations are provided in the repo.
 
